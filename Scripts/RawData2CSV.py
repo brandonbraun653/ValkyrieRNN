@@ -3,14 +3,14 @@ from DataStructures import SDLogAHRSFull, SDLogAHRSMinimal, SDLogMotor
 
 
 rawAHRSData = []
-input_ahrsLogFile = "C:/git/GitHub/ValkyrieRNN/DroneData/ahrsLogMinimal.dat"
+input_ahrsLogFile = "../DroneData/ahrsLogMinimal.dat"
 input_ahrsFileSize = os.path.getsize(input_ahrsLogFile)
-output_ahrsCSVFile = "C:/git/GitHub/ValkyrieRNN/DroneData/ahrsLogMinimal.csv"
+output_ahrsCSVFile = "../DroneData/ahrsLogMinimal.csv"
 
 rawMotorData = []
-input_motorLogFile = "C:/git/GitHub/ValkyrieRNN/DroneData/motorLog.dat"
+input_motorLogFile = "../DroneData/motorLog.dat"
 input_motorFileSize = os.path.getsize(input_motorLogFile)
-output_motorCSVFile = "C:/git/GitHub/ValkyrieRNN/DroneData/motorLog.csv"
+output_motorCSVFile = "../DroneData/motorLog.csv"
 
 
 # Parse the AHRS data

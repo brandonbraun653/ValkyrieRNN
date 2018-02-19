@@ -1,3 +1,8 @@
+# This file contains descriptions for the various kinds of data structures utilized
+# in the ValkyrieFCS software to log drone flight data. The classes are only intended
+# to be utilized in conjunction with the RawData2CSV file for parsing the raw binary
+# data dumps on the sd card into a more readable csv file.
+
 import struct
 
 

@@ -2,12 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9bd695f4-e2da-413c-ad9d-af39ac750c4b" name="Default" comment="">
-      <change beforePath="" afterPath="$PROJECT_DIR$/RNNTutorials/MackeyGlass.py" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MISO.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/.idea/dictionaries/brand.xml" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/src/ControlSystem.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/src/Inference.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/src/MotorController.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/src/__init__.py" />
+      <change beforePath="$PROJECT_DIR$/.idea/ValkyrieRNN.iml" afterPath="$PROJECT_DIR$/.idea/ValkyrieRNN.iml" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_1D.py" afterPath="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_SISO.py" />
+      <change beforePath="$PROJECT_DIR$/DroneRNN_Inference.py" afterPath="$PROJECT_DIR$/DroneRNN_Inference.py" />
+      <change beforePath="$PROJECT_DIR$/RNNTutorials/model.tfl.data-00000-of-00001" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/RNNTutorials/model.tfl.index" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/RNNTutorials/model.tfl.meta" afterPath="" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -17,8 +23,12 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Inference.coverage" NAME="DroneRNN_Inference Coverage Results" MODIFIED="1519434048491" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Ver1.coverage" NAME="DroneRNN_Ver1 Coverage Results" MODIFIED="1519091621456" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$MotorController.coverage" NAME="MotorController Coverage Results" MODIFIED="1519441209799" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation_1D.coverage" NAME="NonLinearApproximation_1D Coverage Results" MODIFIED="1519098733304" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$ControlSystem.coverage" NAME="ControlSystem Coverage Results" MODIFIED="1519434612094" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Ver2.coverage" NAME="DroneRNN_Ver2 Coverage Results" MODIFIED="1519431542615" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation_MIMO.coverage" NAME="NonLinearApproximation_MIMO Coverage Results" MODIFIED="1519169968067" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation_MISO.coverage" NAME="NonLinearApproximation_MISO Coverage Results" MODIFIED="1519168606209" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation.coverage" NAME="NonLinearApproximation Coverage Results" MODIFIED="1519096334492" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
@@ -26,11 +36,26 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file leaf-file-name="NonLinearApproximation_MIMO.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py">
+      <file leaf-file-name="DroneRNN_Ver2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RNNTutorials/DroneRNN_Ver2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="273">
-              <caret line="37" column="0" lean-forward="true" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
+            <state relative-caret-position="-272">
+              <caret line="23" column="55" lean-forward="false" selection-start-line="23" selection-start-column="55" selection-end-line="23" selection-end-column="55" />
+              <folding>
+                <element signature="e#0#64#0" expanded="true" />
+                <element signature="e#955#1073#0" expanded="false" />
+                <element signature="e#1162#2531#0" expanded="false" />
+                <element signature="e#2620#3837#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="DroneRNN_Inference.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="168">
+              <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
               <folding>
                 <element signature="e#0#64#0" expanded="true" />
               </folding>
@@ -38,25 +63,39 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MackeyGlass.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RNNTutorials/MackeyGlass.py">
+      <file leaf-file-name="Inference.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/Inference.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="385">
-              <caret line="25" column="44" lean-forward="true" selection-start-line="25" selection-start-column="44" selection-end-line="25" selection-end-column="44" />
+            <state relative-caret-position="252">
+              <caret line="33" column="35" lean-forward="true" selection-start-line="33" selection-start-column="35" selection-end-line="33" selection-end-column="35" />
               <folding>
-                <element signature="e#0#11#0" expanded="true" />
+                <element signature="e#0#64#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="NonLinearApproximation_MIMO_Chaos.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py">
+      <file leaf-file-name="ControlSystem.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ControlSystem.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+            <state relative-caret-position="1344">
+              <caret line="77" column="74" lean-forward="false" selection-start-line="77" selection-start-column="74" selection-end-line="77" selection-end-column="74" />
               <folding>
-                <element signature="e#0#64#0" expanded="true" />
+                <element signature="e#2720#2848#0" expanded="false" />
+                <element signature="e#2901#3025#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MotorController.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/MotorController.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="525">
+              <caret line="38" column="11" lean-forward="true" selection-start-line="38" selection-start-column="11" selection-end-line="38" selection-end-column="11" />
+              <folding>
+                <element signature="e#307#431#0" expanded="false" />
+                <element signature="e#510#808#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -83,6 +122,12 @@
         <option value="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py" />
         <option value="$PROJECT_DIR$/RNNTutorials/MackeyGlass.py" />
         <option value="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py" />
+        <option value="$PROJECT_DIR$/src/__init__.py" />
+        <option value="$PROJECT_DIR$/src/pid.py" />
+        <option value="$PROJECT_DIR$/src/ControlSystem.py" />
+        <option value="$PROJECT_DIR$/src/MotorController.py" />
+        <option value="$PROJECT_DIR$/DroneRNN_Inference.py" />
+        <option value="$PROJECT_DIR$/src/Inference.py" />
       </list>
     </option>
   </component>
@@ -132,6 +177,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -142,21 +188,21 @@
             <path>
               <item name="ValkyrieRNN" type="b2602c69:ProjectViewProjectNode" />
               <item name="ValkyrieRNN" type="462c0819:PsiDirectoryNode" />
-              <item name="RNNTutorials" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
       <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Python" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -170,116 +216,116 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.NonLinearApproximation_MIMO_Chaos">
-    <configuration name="NonLinearApproximation" type="PythonConfigurationType" factoryName="Python" temporary="true">
+  <component name="RunManager" selected="Python.MotorController">
+    <configuration name="ControlSystem" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\Program Files\Python36\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RNNTutorials" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ValkyrieRNN" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="C:\git\Github\ValkyrieRNN\RNNTutorials\NonLinearApproximation_SISO.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/ControlSystem.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="NonLinearApproximation_1D" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="DroneRNN_Inference" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\Program Files\Python36\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RNNTutorials" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ValkyrieRNN" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="C:\git\Github\ValkyrieRNN\RNNTutorials\NonLinearApproximation_SISO.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DroneRNN_Inference.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="NonLinearApproximation_MIMO" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="DroneRNN_Ver2" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\Program Files\Python36\python.exe" />
+      <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RNNTutorials" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ValkyrieRNN" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RNNTutorials/DroneRNN_Ver2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="NonLinearApproximation_MIMO_Chaos" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="MotorController" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\Program Files\Python36\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RNNTutorials" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ValkyrieRNN" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MotorController.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="NonLinearApproximation_MISO" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="pid" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\Program Files\Python36\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RNNTutorials" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ValkyrieRNN" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MISO.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/pid.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.NonLinearApproximation" />
-      <item index="1" class="java.lang.String" itemvalue="Python.NonLinearApproximation_1D" />
-      <item index="2" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MISO" />
-      <item index="3" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MIMO" />
-      <item index="4" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MIMO_Chaos" />
+      <item index="0" class="java.lang.String" itemvalue="Python.DroneRNN_Ver2" />
+      <item index="1" class="java.lang.String" itemvalue="Python.DroneRNN_Inference" />
+      <item index="2" class="java.lang.String" itemvalue="Python.ControlSystem" />
+      <item index="3" class="java.lang.String" itemvalue="Python.pid" />
+      <item index="4" class="java.lang.String" itemvalue="Python.MotorController" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MIMO_Chaos" />
-        <item index="1" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MIMO" />
-        <item index="2" class="java.lang.String" itemvalue="Python.NonLinearApproximation_MISO" />
-        <item index="3" class="java.lang.String" itemvalue="Python.NonLinearApproximation_1D" />
-        <item index="4" class="java.lang.String" itemvalue="Python.NonLinearApproximation" />
+        <item index="0" class="java.lang.String" itemvalue="Python.MotorController" />
+        <item index="1" class="java.lang.String" itemvalue="Python.pid" />
+        <item index="2" class="java.lang.String" itemvalue="Python.ControlSystem" />
+        <item index="3" class="java.lang.String" itemvalue="Python.DroneRNN_Inference" />
+        <item index="4" class="java.lang.String" itemvalue="Python.DroneRNN_Ver2" />
       </list>
     </recent_temporary>
   </component>
@@ -307,12 +353,13 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25414366" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3325967" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13697916" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13541667" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="false" weight="0.3296875" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="2194" y="288" width="1414" height="543" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="2194" y="288" width="1414" height="543" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.37127072" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -321,7 +368,6 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -333,56 +379,70 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="18" />
+      <option name="time" value="19" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="63">
+          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/DroneRNN_Ver2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="23" column="55" lean-forward="false" selection-start-line="23" selection-start-column="55" selection-end-line="23" selection-end-column="55" />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+            <element signature="e#955#1073#0" expanded="false" />
+            <element signature="e#1162#2531#0" expanded="false" />
+            <element signature="e#2620#3837#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver2.py" />
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="651">
+          <caret line="37" column="0" lean-forward="true" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/MackeyGlass.py" />
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_SISO.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="525">
           <caret line="32" column="2" lean-forward="false" selection-start-line="32" selection-start-column="2" selection-end-line="32" selection-end-column="2" />
-          <folding>
-            <element signature="e#0#64#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#204#268#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver1.py" />
     <entry file="file://$PROJECT_DIR$/RNNTutorials/SineWaveGenerator.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="29" lean-forward="true" selection-start-line="0" selection-start-column="29" selection-end-line="0" selection-end-column="29" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="63" column="0" lean-forward="false" selection-start-line="63" selection-start-column="0" selection-end-line="63" selection-end-column="0" />
-          <folding>
-            <element signature="e#204#268#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver1.py" />
     <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_SISO.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="133">
           <caret line="42" column="59" lean-forward="false" selection-start-line="42" selection-start-column="59" selection-end-line="42" selection-end-column="59" />
-          <folding>
-            <element signature="e#0#64#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -390,7 +450,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="29" lean-forward="false" selection-start-line="0" selection-start-column="29" selection-end-line="0" selection-end-column="29" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -398,7 +457,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="171">
           <caret line="231" column="0" lean-forward="false" selection-start-line="231" selection-start-column="0" selection-end-line="231" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -406,36 +464,108 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="133">
           <caret line="54" column="0" lean-forward="false" selection-start-line="54" selection-start-column="0" selection-end-line="54" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#64#0" expanded="true" />
-          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/MackeyGlass.py" />
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="924">
+          <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="273">
-          <caret line="37" column="0" lean-forward="true" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
+          <caret line="37" column="0" lean-forward="false" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Ver2.py" />
+    <entry file="file://$PROJECT_DIR$/src/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/MotorController.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="525">
+          <caret line="38" column="11" lean-forward="true" selection-start-line="38" selection-start-column="11" selection-end-line="38" selection-end-column="11" />
+          <folding>
+            <element signature="e#307#431#0" expanded="false" />
+            <element signature="e#510#808#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ControlSystem.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1344">
+          <caret line="77" column="74" lean-forward="false" selection-start-line="77" selection-start-column="74" selection-end-line="77" selection-end-column="74" />
+          <folding>
+            <element signature="e#2720#2848#0" expanded="false" />
+            <element signature="e#2901#3025#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RNNTutorials/DroneRNN_Ver2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-272">
+          <caret line="23" column="55" lean-forward="false" selection-start-line="23" selection-start-column="55" selection-end-line="23" selection-end-column="55" />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+            <element signature="e#955#1073#0" expanded="false" />
+            <element signature="e#1162#2531#0" expanded="false" />
+            <element signature="e#2620#3837#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/pid.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="567">
+          <caret line="105" column="19" lean-forward="true" selection-start-line="105" selection-start-column="19" selection-end-line="105" selection-end-column="19" />
+          <folding>
+            <element signature="e#142#157#0" expanded="true" />
+            <element signature="e#266#938#0" expanded="false" />
+            <element signature="e#974#1213#0" expanded="false" />
+            <element signature="e#1246#1891#0" expanded="false" />
+            <element signature="e#2141#2573#0" expanded="false" />
+            <element signature="e#2621#2642#0" expanded="false" />
+            <element signature="e#2704#2726#0" expanded="false" />
+            <element signature="e#2777#2801#0" expanded="false" />
+            <element signature="e#2879#3078#0" expanded="false" />
+            <element signature="e#3139#3644#0" expanded="false" />
+            <element signature="e#3688#3705#0" expanded="false" />
+            <element signature="e#3762#3848#0" expanded="false" />
+            <element signature="e#3894#3913#0" expanded="false" />
+            <element signature="e#3971#4147#0" expanded="false" />
+            <element signature="e#4189#4209#0" expanded="false" />
+            <element signature="e#4251#4271#0" expanded="false" />
+            <element signature="e#4313#4333#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="168">
+          <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
           <folding>
             <element signature="e#0#64#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/RNNTutorials/MackeyGlass.py">
+    <entry file="file://$PROJECT_DIR$/src/Inference.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="385">
-          <caret line="25" column="44" lean-forward="true" selection-start-line="25" selection-start-column="44" selection-end-line="25" selection-end-column="44" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RNNTutorials/NonLinearApproximation_MIMO_Chaos.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+        <state relative-caret-position="252">
+          <caret line="33" column="35" lean-forward="true" selection-start-line="33" selection-start-column="35" selection-end-line="33" selection-end-column="35" />
           <folding>
             <element signature="e#0#64#0" expanded="true" />
           </folding>

@@ -1,0 +1,2 @@
+model_checkpoint_path: "C:\\git\\GitHub\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\model.tfl.ckpt-68"
+all_model_checkpoint_paths: "C:\\git\\GitHub\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\model.tfl.ckpt-68"

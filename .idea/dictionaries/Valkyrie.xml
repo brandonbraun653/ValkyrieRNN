@@ -1,3 +1,10 @@
 <component name="ProjectDictionaryState">
-  <dictionary name="Valkyrie" />
+  <dictionary name="Valkyrie">
+    <words>
+      <w>ckpt</w>
+      <w>matlab</w>
+      <w>rtos</w>
+      <w>setpoints</w>
+    </words>
+  </dictionary>
 </component>

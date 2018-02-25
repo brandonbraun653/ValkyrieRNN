@@ -123,3 +123,65 @@ class SDLogMotor:
         csv_stringified_data[-1] = csv_stringified_data[-1].replace(",", "\n")
 
         return ''.join(csv_stringified_data)
+
+
+class SDLogAngleSetpoint:
+    def __init__(self):
+        self.structSizeInBytes = 7
+        self.dataFormatString = 'IBBB'
+        self.rawData = ()
+
+        # Number of freeRTOS ticks elapsed @ measurement
+        self.tickTime = 0
+
+        # Raw motor command signal time high in uS
+        self.pitch_angle_setpoint = 0
+        self.roll_angle_setpoint = 0
+        self.yaw_angle_setpoint = 0
+
+    def unpack_raw_hex(self, hex_data):
+        assert (len(hex_data) == self.structSizeInBytes)
+
+        self.rawData = struct.unpack(self.dataFormatString, hex_data)
+
+        self.tickTime = self.rawData[0]
+        self.pitch_angle_setpoint = self.rawData[1]
+        self.roll_angle_setpoint = self.rawData[2]
+        self.yaw_angle_setpoint = self.rawData[3]
+
+    def as_csv(self):
+        csv_stringified_data = [(str(x) + ',') for x in self.rawData]
+        csv_stringified_data[-1] = csv_stringified_data[-1].replace(",", "\n")
+
+        return ''.join(csv_stringified_data)
+
+
+class SDLogRateSetpoint:
+    def __init__(self):
+        self.structSizeInBytes = 10
+        self.dataFormatString = 'IHHH'
+        self.rawData = ()
+
+        # Number of freeRTOS ticks elapsed @ measurement
+        self.tickTime = 0
+
+        # Raw motor command signal time high in uS
+        self.pitch_rate_setpoint = 0
+        self.roll_rate_setpoint = 0
+        self.yaw_rate_setpoint = 0
+
+    def unpack_raw_hex(self, hex_data):
+        assert (len(hex_data) == self.structSizeInBytes)
+
+        self.rawData = struct.unpack(self.dataFormatString, hex_data)
+
+        self.tickTime = self.rawData[0]
+        self.pitch_rate_setpoint = self.rawData[1]
+        self.roll_rate_setpoint = self.rawData[2]
+        self.yaw_rate_setpoint = self.rawData[3]
+
+    def as_csv(self):
+        csv_stringified_data = [(str(x) + ',') for x in self.rawData]
+        csv_stringified_data[-1] = csv_stringified_data[-1].replace(",", "\n")
+
+        return ''.join(csv_stringified_data)

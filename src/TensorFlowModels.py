@@ -49,7 +49,7 @@ class ModelConfig:
 def drone_rnn_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                     learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
 
-    input_layer = tflearn.input_data(shape=[None, dim_in, past_depth])
+    input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
 
     layer1 = tflearn.simple_rnn(input_layer,
                                 n_units=layer_neurons,
@@ -86,7 +86,7 @@ def drone_rnn_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropou
 
 def drone_lstm_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                      learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
-    input_layer = tflearn.input_data(shape=[None, dim_in, past_depth])
+    input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
 
     layer1 = tflearn.lstm(input_layer,
                           n_units=layer_neurons,

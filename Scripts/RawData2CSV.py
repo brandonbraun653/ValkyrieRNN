@@ -18,7 +18,7 @@ output_motorCSVFile         = "DroneData/csv/motorLog.csv"
 output_angleSetpointCSVFile = "DroneData/csv/angleSetpoints.csv"
 output_rateSetpointCSVFile  = "DroneData/csv/rateSetpoints.csv"
 output_TSBlankSpaceCSVFile  = "DroneData/csv/timeSeriesDataRaw.csv"
-output_TSInterpCSVFIle      = "DroneData/csv/timeSeriesInterpolated.csv"
+output_TSInterpCSVFIle      = "DroneData/csv/timeSeriesDataInterpolated.csv"
 
 header_timeSeriesCSV = "rtosTick,pitch,roll,yaw," + \
                        "ax,ay,az,gx,gy,gz,mx,my,mz," +\
@@ -26,7 +26,7 @@ header_timeSeriesCSV = "rtosTick,pitch,roll,yaw," + \
                        "asp,asr,asy,rsp,rsr,rsy\n" # angle_set_pitch, roll, yaw...rate_set_pitch, roll, yaw
 
 
-def raw_data_2_csv(ahrs_type_full=True):
+def raw_data_2_csv(parseAHRS=True, parseMOTOR=True, parseANGLE=True, parseRATE=True, ahrs_type_full=True):
     """
     Takes the raw byte code from the SD Card logs and converts them into easy to
     interpret CSV files
@@ -35,117 +35,121 @@ def raw_data_2_csv(ahrs_type_full=True):
     # ----------------------
     # Parse the AHRS data
     # ----------------------
-    try:
-        if ahrs_type_full:
-            input_ahrs_log_file = input_ahrsLogFile_full
-        else:
-            input_ahrs_log_file = input_ahrsLogFile_minimal
+    if parseAHRS:
+        try:
+            if ahrs_type_full:
+                input_ahrs_log_file = input_ahrsLogFile_full
+            else:
+                input_ahrs_log_file = input_ahrsLogFile_minimal
 
-        raw_ahrs_data = []
-        input_file_size = os.path.getsize(input_ahrs_log_file)
+            raw_ahrs_data = []
+            input_file_size = os.path.getsize(input_ahrs_log_file)
 
-        with open(input_ahrs_log_file, "rb") as input_file:
-            bytes_read = 0
+            with open(input_ahrs_log_file, "rb") as input_file:
+                bytes_read = 0
 
-            while bytes_read < input_file_size:
-                if ahrs_type_full:
-                    measurement = DataStructures.SDLogAHRSFull()
-                else:
-                    measurement = DataStructures.SDLogAHRSMinimal()
+                while bytes_read < input_file_size:
+                    if ahrs_type_full:
+                        measurement = DataStructures.SDLogAHRSFull()
+                    else:
+                        measurement = DataStructures.SDLogAHRSMinimal()
 
-                measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
+                    measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
 
-                raw_ahrs_data.append(measurement)
+                    raw_ahrs_data.append(measurement)
 
-                bytes_read += measurement.structSizeInBytes
+                    bytes_read += measurement.structSizeInBytes
 
-            # Write all the measurements to a csv file for processing later
-            with open(output_ahrsCSVFile, 'w') as output_file:
-                [output_file.write(raw_ahrs_data[x].as_csv()) for x in range(len(raw_ahrs_data))]
+                # Write all the measurements to a csv file for processing later
+                with open(output_ahrsCSVFile, 'w') as output_file:
+                    [output_file.write(raw_ahrs_data[x].as_csv()) for x in range(len(raw_ahrs_data))]
 
-        print("Done parsing AHRS log file.")
+            print("Done parsing AHRS log file.")
 
-    except:
-        print("Couldn't properly parse AHRS data. Continuing on.")
+        except:
+            print("Couldn't properly parse AHRS data. Continuing on.")
 
     # ----------------------
     # Parse the motor data
     # ----------------------
-    try:
-        raw_motor_data = []
-        input_file_size = os.path.getsize(input_motorLogFile)
+    if parseMOTOR:
+        try:
+            raw_motor_data = []
+            input_file_size = os.path.getsize(input_motorLogFile)
 
-        with open(input_motorLogFile, "rb") as input_file:
-            bytes_read = 0
+            with open(input_motorLogFile, "rb") as input_file:
+                bytes_read = 0
 
-            while bytes_read < input_file_size:
-                measurement = DataStructures.SDLogMotor()
-                measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
+                while bytes_read < input_file_size:
+                    measurement = DataStructures.SDLogMotor()
+                    measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
 
-                raw_motor_data.append(measurement)
+                    raw_motor_data.append(measurement)
 
-                bytes_read += measurement.structSizeInBytes
+                    bytes_read += measurement.structSizeInBytes
 
-            # Write all the measurements to a csv file for processing later
-            with open(output_motorCSVFile, 'w') as output_file:
-                [output_file.write(raw_motor_data[x].as_csv()) for x in range(len(raw_motor_data))]
+                # Write all the measurements to a csv file for processing later
+                with open(output_motorCSVFile, 'w') as output_file:
+                    [output_file.write(raw_motor_data[x].as_csv()) for x in range(len(raw_motor_data))]
 
-        print("Done parsing Motor log file.")
+            print("Done parsing Motor log file.")
 
-    except:
-        print("Couldn't properly parse motor data. Continuing on.")
+        except:
+            print("Couldn't properly parse motor data. Continuing on.")
 
     # ----------------------
     # Parse the angle setpoint data
     # ----------------------
-    try:
-        raw_angle_setpoint_data = []
-        input_file_size = os.path.getsize(input_angleSetpointLogFile)
+    if parseANGLE:
+        try:
+            raw_angle_setpoint_data = []
+            input_file_size = os.path.getsize(input_angleSetpointLogFile)
 
-        with open(input_angleSetpointLogFile, "rb") as input_file:
-            bytes_read = 0
+            with open(input_angleSetpointLogFile, "rb") as input_file:
+                bytes_read = 0
 
-            while bytes_read < input_file_size:
-                measurement = DataStructures.SDLogAngleSetpoint()
-                measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
+                while bytes_read < input_file_size:
+                    measurement = DataStructures.SDLogAngleSetpoint()
+                    measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
 
-                raw_angle_setpoint_data.append(measurement)
+                    raw_angle_setpoint_data.append(measurement)
 
-                bytes_read += measurement.structSizeInBytes
+                    bytes_read += measurement.structSizeInBytes
 
-            with open(output_angleSetpointCSVFile, 'w') as output_file:
-                [output_file.write(raw_angle_setpoint_data[x].as_csv()) for x in range(len(raw_angle_setpoint_data))]
+                with open(output_angleSetpointCSVFile, 'w') as output_file:
+                    [output_file.write(raw_angle_setpoint_data[x].as_csv()) for x in range(len(raw_angle_setpoint_data))]
 
-        print("Done parsing Angle Setpoint log file.")
+            print("Done parsing Angle Setpoint log file.")
 
-    except:
-        print("Couldn't properly parse angle setpoint data. Continuing on.")
+        except:
+            print("Couldn't properly parse angle setpoint data. Continuing on.")
 
     # ----------------------
     # Parse the rate setpoint data
     # ----------------------
-    try:
-        raw_rate_setpoint_data = []
-        input_file_size = os.path.getsize(input_rateSetpointLogFile)
+    if parseRATE:
+        try:
+            raw_rate_setpoint_data = []
+            input_file_size = os.path.getsize(input_rateSetpointLogFile)
 
-        with open(input_rateSetpointLogFile, "rb") as input_file:
-            bytes_read = 0
+            with open(input_rateSetpointLogFile, "rb") as input_file:
+                bytes_read = 0
 
-            while bytes_read < input_file_size:
-                measurement = DataStructures.SDLogRateSetpoint()
-                measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
+                while bytes_read < input_file_size:
+                    measurement = DataStructures.SDLogRateSetpoint()
+                    measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
 
-                raw_rate_setpoint_data.append(measurement)
+                    raw_rate_setpoint_data.append(measurement)
 
-                bytes_read += measurement.structSizeInBytes
+                    bytes_read += measurement.structSizeInBytes
 
-            with open(output_rateSetpointCSVFile, 'w') as output_file:
-                [output_file.write(raw_rate_setpoint_data[x].as_csv()) for x in range(len(raw_rate_setpoint_data))]
+                with open(output_rateSetpointCSVFile, 'w') as output_file:
+                    [output_file.write(raw_rate_setpoint_data[x].as_csv()) for x in range(len(raw_rate_setpoint_data))]
 
-        print("Done parsing Rate Setpoint log file.")
+            print("Done parsing Rate Setpoint log file.")
 
-    except:
-        print("Couldn't properly parse rate setpoint data. Continuing on.")
+        except:
+            print("Couldn't properly parse rate setpoint data. Continuing on.")
 
 
 def create_time_series_from_csv_logs(ahrs_type_full=True):
@@ -278,7 +282,7 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
     # Linear interpolate the empty spaces left by ahrsData
     # ------------------------------
     keys = list(time_series_data.keys())
-    for idx in range(0, len(keys)):
+    for idx in range(0, len(keys)-1):
         tic = keys[idx]
 
         if np.sum(np.array(time_series_data[tic]['ahrsMeas'])) == 0:
@@ -393,7 +397,7 @@ if __name__ == "__main__":
     output_angleSetpointCSVFile = "../DroneData/csv/angleSetpoints.csv"
     output_rateSetpointCSVFile  = "../DroneData/csv/rateSetpoints.csv"
     output_TSBlankSpaceCSVFile  = "../DroneData/csv/timeSeriesDataRaw.csv"
-    output_TSInterpCSVFIle      = "../DroneData/csv/timeSeriesInterpolated.csv"
+    output_TSInterpCSVFIle      = "../DroneData/csv/timeSeriesDataInterpolated.csv"
 
     matlab_smoothTimeSeriesFile = "Matlab/SmoothTimeSeriesLog.m"
 

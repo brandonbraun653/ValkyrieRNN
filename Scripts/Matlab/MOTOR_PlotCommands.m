@@ -1,5 +1,5 @@
 %% Variable Initialization
-addpath('C:\git\GitHub\ValkyrieRNN\DroneData');
+addpath('C:\git\GitHub\ValkyrieRNN\DroneData\csv');
 
 filename = 'motorLog.csv';
 
@@ -23,7 +23,6 @@ motorData.m4 = inputData(:,M4);
 
 %% Plot the data
 
-%ANGLES -------------------------------------
 figure(1); clf(1);
 hold on; grid on;
 plot(motorData.m1(:,1), '-');

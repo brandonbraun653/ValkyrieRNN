@@ -13,30 +13,16 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
-    # Configuration Variables
-    parse_byte_data = False     # Reconstructs the input data for training
+    train_euler_model = False
+    train_gyro_model = True
 
-    cfg = TFModels.ModelConfig()
-    cfg.model_name = 'euler_model.tfl'
-    cfg.input_size = 6
-    cfg.input_depth = 10
-    cfg.output_size = 2
-    cfg.batch_len = 128
-    cfg.epoch_len = 1
-    cfg.neurons_per_layer = 128
-    cfg.layer_dropout = (0.8, 0.8)
-
-    rawDataPath     = 'DroneData/csv/timeSeriesDataSmoothed.csv'
-    ckpt_path       = 'Checkpoints/DroneRNN_Ver3/EulerModel' + cfg.model_name + '.ckpt'
-    best_ckpt_path  = 'Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/' + cfg.model_name + '.ckpt'
-    cfg_path        = 'euler_model_cfg.csv'
-
-    cfg.save(cfg_path)
+    max_cpu_cores = 4
+    max_gpu_mem = 0.5
 
     # ---------------------------------------
     # Update the input data into the model for training
     # ---------------------------------------
-    if parse_byte_data:
+    if False:
         DataParser.raw_data_2_csv()
         DataParser.create_time_series_from_csv_logs()
         DataParser.smooth_time_series_data()
@@ -44,191 +30,196 @@ if __name__ == "__main__":
     # ---------------------------------------
     # Train the Euler Prediction Network
     # ---------------------------------------
-    tflearn.init_graph(num_cores=16, gpu_memory_fraction=0.8)
-    with tf.device('/gpu:0'):
-        timeSeries = pd.read_csv(rawDataPath)
+    if train_euler_model:
+        # Generate the model configuration
+        cfg = TFModels.ModelConfig()
+        cfg.model_name = 'euler_model.tfl'
+        cfg.input_size = 6
+        cfg.input_depth = 500
+        cfg.output_size = 2
+        cfg.batch_len = 128
+        cfg.epoch_len = 10
+        cfg.neurons_per_layer = 32
+        cfg.layer_dropout = (0.8, 0.8)
+        cfg.save('euler_model_cfg.csv')
+        train_data_len = 25 * 1000      # TODO: Should this be put in the cfg object?
 
-        input = np.array([timeSeries['m1CMD'], timeSeries['m2CMD'], timeSeries['m3CMD'], timeSeries['m4CMD'],
-                          timeSeries['asp'], timeSeries['asr']])
+        # Add a few configurations for saving the model at various stages in training
+        rawDataPath     = 'DroneData/csv/timeSeriesDataSmoothed.csv'
+        ckpt_path       = 'Checkpoints/DroneRNN_Ver3/EulerModel/' + cfg.model_name + '.ckpt'
+        best_ckpt_path  = 'Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/' + cfg.model_name + '.ckpt'
+        last_ckpt_path  = 'Checkpoints/DroneRNN_Ver3/EulerModel/LastResult/' + cfg.model_name + '.ckpt'
 
-        output = np.array([timeSeries['pitch'], timeSeries['roll']])
+        # Now actually do the training
+        print("STARTING TRAINING OF EULER MODEL")
+        tflearn.init_graph(num_cores=max_cpu_cores, gpu_memory_fraction=max_gpu_mem)
+        with tf.device('/gpu:0'):
+            timeSeries = pd.read_csv(rawDataPath)
 
-        input = input.transpose()
-        output = output.transpose()
+            input_full = np.array([timeSeries['m1CMD'],
+                                   timeSeries['m2CMD'],
+                                   timeSeries['m3CMD'],
+                                   timeSeries['m4CMD'],
+                                   timeSeries['asp'],
+                                   timeSeries['asr']]).transpose()
 
-        trainX = []
-        trainY = []
+            output_full = np.array([timeSeries['pitch'],
+                                    timeSeries['roll']]).transpose()
 
-        trainLen = len(input[:, 0]) - 10 * cfg.input_depth
+            num_samples = np.shape(input_full)
+            total_train_iterations = int(np.ceil(num_samples[0] / train_data_len))
 
-        for i in range(0, trainLen):
-            trainX.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-            trainY.append(output[i + cfg.input_depth, 0:cfg.output_size])
+            # Create the basic model to train with iteratively
+            model = TFModels.drone_rnn_model(dim_in=cfg.input_size,
+                                             dim_out=cfg.output_size,
+                                             past_depth=cfg.input_depth,
+                                             layer_neurons=cfg.neurons_per_layer,
+                                             layer_dropout=cfg.layer_dropout,
+                                             learning_rate=cfg.learning_rate,
+                                             checkpoint_path=ckpt_path,
+                                             best_checkpoint_path=best_ckpt_path)
 
-        trainX = np.reshape(trainX, [-1, cfg.input_depth, cfg.input_size])
-        trainY = np.reshape(trainY, [-1, cfg.output_size])
+            # Train the above model with the full dataset being broken up into
+            # multiple parts to handle RAM overload
+            current_train_idx = 0
+            trainX = []
+            trainY = []
 
-        model = TFModels.drone_rnn_model(dim_in=cfg.input_size,
-                                         dim_out=cfg.output_size,
-                                         past_depth=cfg.input_depth,
-                                         layer_neurons=cfg.neurons_per_layer,
-                                         layer_dropout=cfg.layer_dropout,
-                                         learning_rate=cfg.learning_rate,
-                                         checkpoint_path=ckpt_path,
-                                         best_checkpoint_path=best_ckpt_path)
+            for train_iteration in range(0, total_train_iterations):
+                # Reset the training data for a new batch
+                trainX = []
+                trainY = []
 
-        model.fit(trainX, trainY,
-                  n_epoch=cfg.epoch_len,
-                  validation_set=0.25,
-                  batch_size=cfg.batch_len,
-                  show_metric=True,
-                  snapshot_epoch=True,
-                  run_id='HereGoesNothing')
+                # Grab a full set of data if we have enough left
+                if (current_train_idx + train_data_len) < num_samples[0]:
 
-        print("Deleting training data")
-        del timeSeries
-        del trainX
-        del trainY
-    # ---------------------------------------
-    # Plot some data for the user to see how well training went
-    # ---------------------------------------
-    X = []
-    Y = []
+                    for i in range(0, train_data_len):
+                        i = current_train_idx + i
 
-    for i in range(len(input[:, 0]) - trainLen, len(input[:, 0])-cfg.input_depth):
-        X.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-        Y.append(output[i + cfg.input_depth, 0:cfg.output_size])
+                        trainX.append(input_full[i:i + cfg.input_depth, 0:cfg.input_size])
+                        trainY.append(output_full[i + cfg.input_depth, 0:cfg.output_size])
 
-    X = np.reshape(X, [-1, cfg.input_depth, cfg.input_size])
-    Y = np.reshape(Y, [-1, cfg.output_size])
+                # Otherwise, only grab the remaining data we can fit
+                else:
+                    for i in range(0, (num_samples[0] - current_train_idx - cfg.input_depth)):
+                        i = i + current_train_idx
 
-    predictY = model.predict(X)
+                        trainX.append(input_full[i:i + cfg.input_depth, 0:cfg.input_size])
+                        trainY.append(output_full[i + cfg.input_depth, 0:cfg.output_size])
 
-    # Plot the results
-    print("Plotting Sample Outputs")
-    imgSavePath = "Checkpoints/DroneRNN_Ver3/EulerModel/Images/"
+                # Reshape for NN input (X)[batch_size, sample_depth, sample_values], (Y)[batch_size, output_values]
+                trainX = np.reshape(trainX, [-1, cfg.input_depth, cfg.input_size])
+                trainY = np.reshape(trainY, [-1, cfg.output_size])
 
-    # PITCH
-    plt.figure(figsize=(16, 4))
-    plt.suptitle('Pitch Actual Vs Predicted')
-    plt.plot(Y[:, 0], 'r-', label='Actual')
-    plt.plot(predictY[:, 0], 'g-', label='Predicted')
-    plt.legend()
-    plt.savefig(imgSavePath+'pitch.png')
+                current_train_idx += train_data_len
 
-    # ROLL
-    plt.figure(figsize=(16, 4))
-    plt.suptitle('Roll Actual vs Predicted')
-    plt.plot(Y[1, :], 'r-', label='Actual')
-    plt.plot(predictY[1, :], 'g-', label='Predicted')
-    plt.legend()
-    plt.savefig(imgSavePath + 'roll.png')
+                model.fit(trainX, trainY,
+                          n_epoch=cfg.epoch_len,
+                          validation_set=0.25,
+                          batch_size=cfg.batch_len,
+                          show_metric=True,
+                          snapshot_epoch=True,
+                          run_id='HereGoesNothing')
 
-
+            # Save the last state of the model to a known location with a known name for quick
+            # lookup in the inferencing script. This may or many not be the best performer.
+            model.save(last_ckpt_path)
 
     # ---------------------------------------
     # Train the Gyro Prediction Network
     # ---------------------------------------
-    with tf.device('/gpu:0'):
+    if train_gyro_model:
+        # Generate the model configuration
         cfg = TFModels.ModelConfig()
         cfg.model_name = 'gyro_model.tfl'
         cfg.input_size = 6
-        cfg.input_depth = 50
+        cfg.input_depth = 500
         cfg.output_size = 3
         cfg.batch_len = 128
-        cfg.epoch_len = 1
+        cfg.epoch_len = 10
         cfg.neurons_per_layer = 32
         cfg.layer_dropout = (0.8, 0.8)
+        cfg.save('gyro_model_cfg.csv')
+        train_data_len = 25 * 1000  # TODO: Should this be put in the cfg object?
 
+        # Add a few configurations for saving the model at various stages in training
         rawDataPath = 'DroneData/csv/timeSeriesDataSmoothed.csv'
         ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/' + cfg.model_name + '.ckpt'
         best_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/' + cfg.model_name + '.ckpt'
-        cfg_path = 'gyro_model_cfg.csv'
+        last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/LastResult/' + cfg.model_name + '.ckpt'
 
-        cfg.save(cfg_path)
+        # Now actually do the training
+        print("STARTING TRAINING OF GYRO MODEL")
+        tflearn.init_graph(num_cores=max_cpu_cores, gpu_memory_fraction=max_gpu_mem)
+        with tf.device('/gpu:0'):
+            timeSeries = pd.read_csv(rawDataPath)
 
-        timeSeries = pd.read_csv(rawDataPath)
+            input_full = np.array([timeSeries['m1CMD'],
+                                   timeSeries['m2CMD'],
+                                   timeSeries['m3CMD'],
+                                   timeSeries['m4CMD'],
+                                   timeSeries['asp'],
+                                   timeSeries['asr']]).transpose()
 
-        input = np.array([timeSeries['m1CMD'], timeSeries['m2CMD'], timeSeries['m3CMD'], timeSeries['m4CMD'],
-                          timeSeries['asp'], timeSeries['asr']])
+            output_full = np.array([timeSeries['gx'],
+                                    timeSeries['gy'],
+                                    timeSeries['gz']]).transpose()
 
-        output = np.array([timeSeries['gx'], timeSeries['gy'], timeSeries['gz']])
+            num_samples = np.shape(input_full)
+            total_train_iterations = int(np.ceil(num_samples[0] / train_data_len))
 
-        input = input.transpose()
-        output = output.transpose()
+            model = TFModels.drone_rnn_model(dim_in=cfg.input_size,
+                                             dim_out=cfg.output_size,
+                                             past_depth=cfg.input_depth,
+                                             layer_neurons=cfg.neurons_per_layer,
+                                             layer_dropout=cfg.layer_dropout,
+                                             learning_rate=cfg.learning_rate,
+                                             checkpoint_path=ckpt_path,
+                                             best_checkpoint_path=best_ckpt_path)
 
-        trainX = []
-        trainY = []
+            # Train the above model with the full dataset being broken up into
+            # multiple parts to handle RAM overload
+            current_train_idx = 0
+            trainX = []
+            trainY = []
 
-        trainLen = len(input[:, 0]) - 10 * cfg.input_depth
+            for train_iteration in range(0, total_train_iterations):
+                # Reset the training data for a new batch
+                trainX = []
+                trainY = []
 
-        for i in range(0, trainLen):
-            trainX.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-            trainY.append(output[i + cfg.input_depth, 0:cfg.output_size])
+                # Grab a full set of data if we have enough left
+                if (current_train_idx + train_data_len) < num_samples[0]:
 
-        trainX = np.reshape(trainX, [-1, cfg.input_depth, cfg.input_size])
-        trainY = np.reshape(trainY, [-1, cfg.output_size])
+                    for i in range(0, train_data_len):
+                        i = current_train_idx + i
 
-        model = TFModels.drone_rnn_model(dim_in=cfg.input_size,
-                                         dim_out=cfg.output_size,
-                                         past_depth=cfg.input_depth,
-                                         layer_neurons=cfg.neurons_per_layer,
-                                         layer_dropout=cfg.layer_dropout,
-                                         learning_rate=cfg.learning_rate,
-                                         checkpoint_path=ckpt_path,
-                                         best_checkpoint_path=best_ckpt_path)
+                        trainX.append(input_full[i:i + cfg.input_depth, 0:cfg.input_size])
+                        trainY.append(output_full[i + cfg.input_depth, 0:cfg.output_size])
 
-        model.fit(trainX, trainY,
-                  n_epoch=cfg.epoch_len,
-                  validation_set=0.25,
-                  batch_size=cfg.batch_len,
-                  show_metric=True,
-                  snapshot_epoch=True,
-                  run_id='HereGoesNothing')
+                # Otherwise, only grab the remaining data we can fit
+                else:
+                    for i in range(0, (num_samples[0] - current_train_idx - cfg.input_depth)):
+                        i = i + current_train_idx
 
-        print("Deleting training data")
-        del timeSeries
-        del trainX
-        del trainY
-    # ---------------------------------------
-    # Plot some data for the user to see how well training went
-    # ---------------------------------------
-    X = []
-    Y = []
+                        trainX.append(input_full[i:i + cfg.input_depth, 0:cfg.input_size])
+                        trainY.append(output_full[i + cfg.input_depth, 0:cfg.output_size])
 
-    for i in range(len(input[:, 0]) - trainLen, len(input[:, 0]) - cfg.input_depth):
-        X.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-        Y.append(output[i + cfg.input_depth, 0:cfg.output_size])
+                # Reshape for NN input (X)[batch_size, sample_depth, sample_values], (Y)[batch_size, output_values]
+                trainX = np.reshape(trainX, [-1, cfg.input_depth, cfg.input_size])
+                trainY = np.reshape(trainY, [-1, cfg.output_size])
 
-    X = np.reshape(X, [-1, cfg.input_depth, cfg.input_size])
-    Y = np.reshape(Y, [-1, cfg.output_size])
+                current_train_idx += train_data_len
 
-    predictY = model.predict(X)
+                model.fit(trainX, trainY,
+                          n_epoch=cfg.epoch_len,
+                          validation_set=0.25,
+                          batch_size=cfg.batch_len,
+                          show_metric=True,
+                          snapshot_epoch=True,
+                          run_id='HereGoesNothing')
 
-    # Plot the results
-    print("Plotting Sample Outputs")
-    imgSavePath = "Checkpoints/DroneRNN_Ver3/GyroModel/Images/"
+            # Save the last state of the model to a known location with a known name for quick
+            # lookup in the inferencing script. This may or many not be the best performer.
+            model.save(last_ckpt_path)
 
-    # GYRO X
-    plt.figure(figsize=(16, 4))
-    plt.suptitle('GX Actual vs Predicted')
-    plt.plot(Y[2, :], 'r-', label='Actual')
-    plt.plot(predictY[2, :], 'g-', label='Predicted')
-    plt.legend()
-    plt.savefig(imgSavePath + 'gx.png')
-
-    # GYRO Y
-    plt.figure(figsize=(16, 4))
-    plt.suptitle('GY Actual vs Predicted')
-    plt.plot(Y[3, :], 'r-', label='Actual')
-    plt.plot(predictY[3, :], 'g-', label='Predicted')
-    plt.legend()
-    plt.savefig(imgSavePath + 'gy.png')
-
-    # GYRO Z
-    plt.figure(figsize=(16, 4))
-    plt.suptitle('GZ Actual vs Predicted')
-    plt.plot(Y[4, :], 'r-', label='Actual')
-    plt.plot(predictY[4, :], 'g-', label='Predicted')
-    plt.legend()
-    plt.savefig(imgSavePath + 'gz.png')

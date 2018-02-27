@@ -19,35 +19,32 @@ if __name__ == "__main__":
     conn = TCPSocket(host_ip=HOST, port_num=PORT)
 
     curr_path = os.path.dirname(os.path.abspath(__file__))
-    nn_path = curr_path + '\Checkpoints\DroneRNN_Ver3\BestResult\\'
-    nn_model = 'model.tfl.ckpt8995'
 
     # -------------------------------
     # Load the model configuration files
     # -------------------------------
     euler_cfg = ModelConfig()
     euler_cfg.load('euler_model_cfg.csv')
+    euler_ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/LastResult/' + euler_cfg.model_name + '.ckpt'
 
     gyro_cfg = ModelConfig()
     gyro_cfg.load('gyro_model_cfg.csv')
+    gyro_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/LastResult/' + gyro_cfg.model_name + '.ckpt'
 
     # -------------------------------
     # Create the NN models
     # -------------------------------
-    last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/LastResult/' + euler_cfg.model_name + '.ckpt'
+    sys = DroneModel(tf_euler_chkpt_path=euler_ckpt_path, tf_gyro_chkpt_path=gyro_ckpt_path)
+    sys.initialize(euler_cfg_path='euler_model_cfg.csv', gyro_cfg_path='gyro_model_cfg.csv')
 
-    euler_model = TFModels.drone_rnn_model(dim_in=euler_cfg.input_size,
-                                           dim_out=euler_cfg.output_size,
-                                           past_depth=euler_cfg.input_depth,
-                                           layer_neurons=euler_cfg.neurons_per_layer,
-                                           layer_dropout=euler_cfg.layer_dropout,
-                                           learning_rate=euler_cfg.learning_rate)
 
-    euler_model.load(last_ckpt_path)
-    print("Successfully loaded Euler model")
 
-    # sys = DroneModel(tf_cell_type='rnn', tf_model_name=nn_model, tf_chkpt_path=nn_path)
-    # sys.initialize()
+    sys.TESTFUNC()
+
+
+
+
+
 
     # ---------------------------------------
     # Plot some data for the user to see how well training went

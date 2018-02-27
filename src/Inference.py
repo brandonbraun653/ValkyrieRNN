@@ -1,14 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
 import tflearn
-import tensorflow
+import tensorflow as tf
 import numpy as np
 import pandas as pd
+import matlab.engine
 import matplotlib; matplotlib.use('TkAgg')
 import matplotlib.pyplot as graph
 
 
-import src.TensorFlowModels as Models
+import src.TensorFlowModels as TFModels
 import src.MotorController
 from src.ControlSystem import AxisController
 
@@ -51,42 +52,103 @@ class StepResponseMetrics:
 
 
 class DroneModel:
-    def __init__(self, tf_cell_type='rnn', tf_model_name='', tf_chkpt_path=''):
-        self.model_name = tf_model_name
-        self.checkpoint_path = tf_chkpt_path
+    def __init__(self, tf_euler_chkpt_path='', tf_gyro_chkpt_path=''):
+        self._euler_chkpt_path = tf_euler_chkpt_path
+        self._gyro_chkpt_path = tf_gyro_chkpt_path
 
-        self._tf_cell_type = tf_cell_type
-        self._tf_model = None
+        self._euler_model = None    # Predicts Euler Angle Outputs
+        self._gyro_model = None     # Predicts Gyro Sensor Outputs
 
-        self._model_csv_access_keys = ['dim_in', 'dim_out', 'input_depth', 'neurons', 'dropout', 'learning_rate']
-        self._model_input_dim = 0
-        self._model_output_dim = 0
-        self._model_input_depth = 0
-        self._model_layer_neurons = 0
-        self._model_layer_dropout = (0, 0)
-        self._model_learning_rate = 0
+        self._euler_graph = tf.Graph()
+        self._gyro_graph = tf.Graph()
 
-    def initialize(self, configuration_path):
+        self._matlab_engine = None
+
+        self._pitch_ctrl = None
+        self._roll_ctrl = None
+        self._yaw_ctrl = None
+
+        self._pitch_angle_setpoint = 0
+        self._pitch_angle_feedback = 0
+        self._pitch_rate_feedback = 0
+        self._pitch_output = 0
+        self._sample_time = 4.0
+
+    def initialize(self, euler_cfg_path, gyro_cfg_path):
         """
         Do things like set up the time series inputs for things like
         step functions, buffer sizes, NN model, Matlab environment etc
         :return:
         """
 
-        assert self._tf_cell_type == 'rnn' or self._tf_cell_type == 'lstm', "Incorrect cell type input"
+        # Setup the Euler prediction network
+        # with self._euler_graph.as_default():
+        #     print("Initializing Euler Model...")
+        #     euler_cfg = TFModels.ModelConfig()
+        #     euler_cfg.load(euler_cfg_path)
+        #
+        #     self._euler_model = TFModels.drone_rnn_model(dim_in=euler_cfg.input_size,
+        #                                                  dim_out=euler_cfg.output_size,
+        #                                                  past_depth=euler_cfg.input_depth,
+        #                                                  layer_neurons=euler_cfg.neurons_per_layer,
+        #                                                  layer_dropout=euler_cfg.layer_dropout,
+        #                                                  learning_rate=euler_cfg.learning_rate)
+        #
+        #     self._euler_model.load(self._euler_chkpt_path)
+        #     print("Loaded archived Euler model.")
 
-        if self._tf_cell_type == 'rnn':
-            self._tf_model = Models.drone_rnn_model(dim_in=4, dim_out=2, past_depth=1250, layer_neurons=256,
-                                                    layer_dropout=(0.8, 0.8), learning_rate=0.002,
-                                                    checkpoint_path=self.checkpoint_path)
+        # Setup the Gyro prediction network
+        # with self._gyro_graph.as_default():
+        #     print("Initializing Gyro Model...")
+        #     gyro_cfg = TFModels.ModelConfig()
+        #     gyro_cfg.load(gyro_cfg_path)
+        #
+        #     self._gyro_model = TFModels.drone_rnn_model(dim_in=gyro_cfg.input_size,
+        #                                                 dim_out=gyro_cfg.output_size,
+        #                                                 past_depth=gyro_cfg.input_depth,
+        #                                                 layer_neurons=gyro_cfg.neurons_per_layer,
+        #                                                 layer_dropout=gyro_cfg.layer_dropout,
+        #                                                 learning_rate=gyro_cfg.learning_rate)
+        #
+        #     self._gyro_model.load(self._gyro_chkpt_path)
+        #     print("Loaded archived Gyro model.")
 
-        else:
-            self._tf_model = Models.drone_lstm_model(dim_in=4, dim_out=2, past_depth=1250, layer_neurons=256,
-                                                     layer_dropout=(0.8, 0.8), learning_rate=0.001,
-                                                     checkpoint_path=self.checkpoint_path)
+        # Setup the Matlab environment
+        # print("Starting Matlab Engine")
+        # self._matlab_engine = matlab.engine.start_matlab()
+        # self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
+        # print("Done")
 
-        self._tf_model.load(self.checkpoint_path + self.model_name)
-        print('Loaded archived model: ', self.model_name)
+        # Setup the PID controllers
+        self._pitch_ctrl = AxisController(angle_setpoint=self._pitch_angle_setpoint,
+                                          angle_fb=self._pitch_angle_feedback,
+                                          rate_fb=self._pitch_rate_feedback,
+                                          output=self._pitch_output,
+                                          sample_time_ms=self._sample_time)
+
+    def TESTFUNC(self):
+        self._pitch_ctrl.update_angle_pid(2.5, 3.0, 0.01)
+        self._pitch_ctrl.update_rate_pid(0.9, 4.0, 0.05)
+
+        x = np.linspace(0.0, 20*np.pi, 10*1000)
+
+        for val in x:
+            # Update PID controller inputs
+            self._pitch_angle_setpoint = np.sin(val)
+            self._pitch_angle_feedback = np.cos(val)
+            self._pitch_rate_feedback = np.sin(val)*np.cos(val)
+            print("Angle Setpoint: ", str(self._pitch_angle_setpoint))
+            print("Angle Feedback: ", str(self._pitch_angle_feedback))
+            print("Rate Feedback: ", str(self._pitch_rate_feedback))
+
+            # Update the controller
+            self._pitch_ctrl.compute()
+            print("PID Output: ", str(self._pitch_output), "\n")
+
+
+
+
+
 
     def set_rate_pid(self, kp, ki, kd):
         raise NotImplementedError

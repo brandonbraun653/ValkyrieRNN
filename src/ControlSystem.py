@@ -46,9 +46,10 @@ class AxisController:
                                    self._angle_kp, self._angle_ki, self._angle_kd,
                                    self._angle_controller_direction)
 
-        self.angleController.auto(False)
-        self.angleController.sample_time(sample_time_ms)
+        self.angleController.set_auto(False)
+        self.angleController.set_sample_time(sample_time_ms)
         self.angleController.set_output_limits(-self._max_angular_rate, self._max_angular_rate)
+        self.angleController.initialize()
 
         self.rateController = PID(self._rate_feedback,              # Feedback from GYRO of actual rate
                                   self._motor_cmd_output,           # Output into the NN
@@ -56,9 +57,10 @@ class AxisController:
                                   self._rate_kp, self._rate_ki, self._rate_kd,
                                   self._rate_controller_direction)
 
-        self.rateController.auto(False)
-        self.rateController.sample_time(sample_time_ms)
+        self.rateController.set_auto(False)
+        self.rateController.set_sample_time(sample_time_ms)
         self.rateController.set_output_limits(-self._motor_output_range, self._motor_output_range)
+        self.rateController.initialize()
 
     def update_angle_pid(self, kp, ki, kd):
         self._angle_kp = kp

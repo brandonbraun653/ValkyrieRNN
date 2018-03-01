@@ -1,2 +1,2 @@
 input_size,input_depth,output_size,batch_len,epoch_len,neurons_per_layer,dropout_1,dropout_2,model_name,learning_rate
-6,10,2,32,1,16,0.8,0.8,euler_model.tfl,0.001
+4,1250,2,128,10,512,0.8,0.8,euler_model.tfl,0.001

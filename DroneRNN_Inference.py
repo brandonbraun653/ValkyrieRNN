@@ -11,7 +11,7 @@ import src.TensorFlowModels as TFModels
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
-import matplotlib.pyplot as graph
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     HOST = '127.0.0.1'
@@ -37,89 +37,20 @@ if __name__ == "__main__":
     sys = DroneModel(tf_euler_chkpt_path=euler_ckpt_path, tf_gyro_chkpt_path=gyro_ckpt_path)
     sys.initialize(euler_cfg_path='euler_model_cfg.csv', gyro_cfg_path='gyro_model_cfg.csv')
 
+    sys.set_pitch_ctrl_pid(kp_angle=2.5, ki_angle=3.0, kd_angle=0.01,
+                           kp_rate=0.9, ki_rate=4.0, kd_rate=0.05)
+
+    sys.set_roll_ctrl_pid(kp_angle=2.5, ki_angle=3.0, kd_angle=0.01,
+                          kp_rate=0.9, ki_rate=4.0, kd_rate=0.05)
+
+    sys.set_yaw_ctrl_pid(0, 0, 0, 0, 0, 0)
+
+    output = sys.simulate_pitch_step(step_size=10.0, sim_length= 250)
 
 
-    sys.TESTFUNC()
 
 
 
 
 
 
-    # ---------------------------------------
-    # Plot some data for the user to see how well training went
-    # ---------------------------------------
-    # X = []
-    # Y = []
-    #
-    # for i in range(len(input[:, 0]) - trainLen, len(input[:, 0])-cfg.input_depth):
-    #     X.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-    #     Y.append(output[i + cfg.input_depth, 0:cfg.output_size])
-    #
-    # X = np.reshape(X, [-1, cfg.input_depth, cfg.input_size])
-    # Y = np.reshape(Y, [-1, cfg.output_size])
-    #
-    # predictY = model.predict(X)
-
-    # Plot the results
-    # print("Plotting Sample Outputs")
-    # imgSavePath = "Checkpoints/DroneRNN_Ver3/EulerModel/Images/"
-
-    # PITCH
-    # plt.figure(figsize=(16, 4))
-    # plt.suptitle('Pitch Actual Vs Predicted')
-    # plt.plot(Y[:, 0], 'r-', label='Actual')
-    # plt.plot(predictY[:, 0], 'g-', label='Predicted')
-    # plt.legend()
-    # plt.savefig(imgSavePath+'pitch.png')
-
-    # ROLL
-    # plt.figure(figsize=(16, 4))
-    # plt.suptitle('Roll Actual vs Predicted')
-    # plt.plot(Y[1, :], 'r-', label='Actual')
-    # plt.plot(predictY[1, :], 'g-', label='Predicted')
-    # plt.legend()
-    # plt.savefig(imgSavePath + 'roll.png')
-
-    # ---------------------------------------
-    # Plot some data for the user to see how well training went
-    # ---------------------------------------
-    # X = []
-    # Y = []
-    #
-    # for i in range(len(input[:, 0]) - trainLen, len(input[:, 0]) - cfg.input_depth):
-    #     X.append(input[i:i + cfg.input_depth, 0:cfg.input_size])
-    #     Y.append(output[i + cfg.input_depth, 0:cfg.output_size])
-    #
-    # X = np.reshape(X, [-1, cfg.input_depth, cfg.input_size])
-    # Y = np.reshape(Y, [-1, cfg.output_size])
-    #
-    # predictY = model.predict(X)
-    #
-    # # Plot the results
-    # print("Plotting Sample Outputs")
-    # imgSavePath = "Checkpoints/DroneRNN_Ver3/GyroModel/Images/"
-    #
-    # # GYRO X
-    # plt.figure(figsize=(16, 4))
-    # plt.suptitle('GX Actual vs Predicted')
-    # plt.plot(Y[2, :], 'r-', label='Actual')
-    # plt.plot(predictY[2, :], 'g-', label='Predicted')
-    # plt.legend()
-    # plt.savefig(imgSavePath + 'gx.png')
-    #
-    # # GYRO Y
-    # plt.figure(figsize=(16, 4))
-    # plt.suptitle('GY Actual vs Predicted')
-    # plt.plot(Y[3, :], 'r-', label='Actual')
-    # plt.plot(predictY[3, :], 'g-', label='Predicted')
-    # plt.legend()
-    # plt.savefig(imgSavePath + 'gy.png')
-    #
-    # # GYRO Z
-    # plt.figure(figsize=(16, 4))
-    # plt.suptitle('GZ Actual vs Predicted')
-    # plt.plot(Y[4, :], 'r-', label='Actual')
-    # plt.plot(predictY[4, :], 'g-', label='Predicted')
-    # plt.legend()
-    # plt.savefig(imgSavePath + 'gz.png')

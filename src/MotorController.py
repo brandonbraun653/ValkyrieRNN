@@ -4,7 +4,7 @@ motor_mix_matrix = np.array([[1.0,  1.0,  1.0, 0.0],
                             [1.0, -1.0, -1.0, 0.0],
                             [1.0,  1.0, -1.0, 0.0],
                             [1.0, -1.0,  1.0, 0.0]])
-max_motor_val = 1860
+max_motor_val = 1650
 min_motor_val = 1060
 
 

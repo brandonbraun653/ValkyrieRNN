@@ -49,7 +49,9 @@ class ModelConfig:
 def drone_rnn_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                     learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
 
-    input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
+    # input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
+    input_layer = tflearn.input_data(shape=[None, dim_in, past_depth])
+
 
     layer1 = tflearn.simple_rnn(input_layer,
                                 n_units=layer_neurons,
@@ -84,9 +86,44 @@ def drone_rnn_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropou
                        best_checkpoint_path=best_checkpoint_path)
 
 
+# def drone_lstm_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+#                      learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
+#
+#     # input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
+#     input_layer = tflearn.input_data(shape=[None, dim_in, past_depth])
+#
+#     layer1 = tflearn.lstm(input_layer,
+#                           n_units=layer_neurons,
+#                           return_seq=True,
+#                           dropout=layer_dropout)
+#
+#     layer2 = tflearn.lstm(layer1,
+#                           n_units=layer_neurons,
+#                           return_seq=True,
+#                           dropout=layer_dropout)
+#
+#     layer3 = tflearn.lstm(layer2,
+#                           n_units=layer_neurons,
+#                           return_seq=False,
+#                           dropout=layer_dropout)
+#
+#     layer4 = tflearn.fully_connected(layer3, n_units=dim_out)
+#
+#     output_layer = tflearn.regression(layer4,
+#                                       optimizer='adam',
+#                                       loss='mean_square',
+#                                       learning_rate=learning_rate)
+#
+#     return tflearn.DNN(output_layer,
+#                        tensorboard_verbose=3,
+#                        checkpoint_path=checkpoint_path,
+#                        best_checkpoint_path=best_checkpoint_path)
+
 def drone_lstm_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                      learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
-    input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
+
+    # input_layer = tflearn.input_data(shape=[None, past_depth, dim_in])
+    input_layer = tflearn.input_data(shape=[None, dim_in, past_depth])
 
     layer1 = tflearn.lstm(input_layer,
                           n_units=layer_neurons,
@@ -100,12 +137,22 @@ def drone_lstm_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropo
 
     layer3 = tflearn.lstm(layer2,
                           n_units=layer_neurons,
+                          return_seq=True,
+                          dropout=layer_dropout)
+
+    layer4 = tflearn.lstm(layer3,
+                          n_units=layer_neurons,
+                          return_seq=True,
+                          dropout=layer_dropout)
+
+    layer5 = tflearn.lstm(layer4,
+                          n_units=layer_neurons,
                           return_seq=False,
                           dropout=layer_dropout)
 
-    layer4 = tflearn.fully_connected(layer3, n_units=dim_out)
+    layer6 = tflearn.fully_connected(layer5, n_units=dim_out)
 
-    output_layer = tflearn.regression(layer4,
+    output_layer = tflearn.regression(layer6,
                                       optimizer='adam',
                                       loss='mean_square',
                                       learning_rate=learning_rate)
@@ -114,4 +161,3 @@ def drone_lstm_model(dim_in, dim_out, past_depth, layer_neurons=128, layer_dropo
                        tensorboard_verbose=3,
                        checkpoint_path=checkpoint_path,
                        best_checkpoint_path=best_checkpoint_path)
-

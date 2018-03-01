@@ -220,6 +220,7 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
 
     all_recorded_ticks = np.r_[motor_ticks, ahrs_ticks, angle_setpoint_ticks, rate_setpoint_ticks]
 
+    print("\tCreating time series structure...")
     time_series_data = {}
     for tic in all_recorded_ticks[:, 0]:
         if tic not in time_series_data:
@@ -240,6 +241,8 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
     # Fill in the time_series_data dict with pertinent information
     # at each valid tic mark
     # ------------------------------
+    # """
+    print("\tFilling motor data...")
     for idx in range(0, len(motor_ticks)):
         tic = motor_data[time_col][idx]
         time_series_data[tic]['motorCMD'] = np.array([motor_data[m1_col][idx],
@@ -247,6 +250,7 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
                                                       motor_data[m3_col][idx],
                                                       motor_data[m4_col][idx]])
 
+    print("\tFilling ahrs data...")
     for idx in range(0, len(ahrs_ticks)):
         tic = ahrs_data[time_col][idx]
 
@@ -261,12 +265,15 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
             time_series_data[tic]['ahrsMeas'] = np.array([
                 ahrs_data[pitch_col][idx], ahrs_data[roll_col][idx], ahrs_data[yaw_col][idx]])
 
+    # """
+    print("\tFilling angle setpoint data...")
     for idx in range(0, len(angle_setpoint_ticks)):
         tic = angle_setpoint_data[time_col][idx]
         time_series_data[tic]['angleSet'] = np.array([angle_setpoint_data[pitch_col][idx],
                                                       angle_setpoint_data[roll_col][idx],
                                                       angle_setpoint_data[yaw_col][idx]])
 
+    print("\tFilling rate setpoint data...")
     for idx in range(0, len(rate_setpoint_ticks)):
         tic = rate_setpoint_data[time_col][idx]
         time_series_data[tic]['rateSet'] = np.array([rate_setpoint_data[pitch_col][idx],
@@ -274,6 +281,7 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
                                                      rate_setpoint_data[yaw_col][idx]])
 
     # As a sanity check for later, make sure the data is logged before interpolation
+    print("\tWriting filled data to file")
     write_time_series_to_file(filename=output_TSBlankSpaceCSVFile,
                               header_str=header_timeSeriesCSV,
                               data=time_series_data)
@@ -281,7 +289,11 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
     # ------------------------------
     # Linear interpolate the empty spaces left by ahrsData
     # ------------------------------
+    #"""
+    print("\tInterpolating AHRS...")
     keys = list(time_series_data.keys())
+    keys.sort(key=int)
+
     for idx in range(0, len(keys)-1):
         tic = keys[idx]
 
@@ -308,10 +320,14 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
     # ------------------------------
     # Fill in the zero fields for motor commands (values don't change in MCU until rtos tick update)
     # ------------------------------
+    print("\tInterpolating Motor CMDs...")
+    keys = list(time_series_data.keys())
+    keys.sort(key=int)
+
     motors_on = False
     last_valid_cmd = []
     keys_to_remove = []
-    for idx in range(0, len(time_series_data.keys())):
+    for idx in range(0, len(keys)):
         current_motor_cmd = np.array(time_series_data[keys[idx]]['motorCMD'])
 
         if not motors_on:
@@ -331,38 +347,66 @@ def create_time_series_from_csv_logs(ahrs_type_full=True):
 
     for key in keys_to_remove:
         time_series_data.pop(key)
+    # """
 
     # ------------------------------
     # Fill in the zero fields for the PID controller
     # ------------------------------
+    print("\tInterpolating PID...")
     keys = list(time_series_data.keys())
+    keys.sort(key=int)
 
+    update_rate_ms = 8
 
     # Start with the angle controller for pitch, roll, yaw
     for controller in range(0, 3):
         last_valid_cmd = 0
-        for idx in range(0, len(time_series_data.keys())):
-            current_cmd = time_series_data[keys[idx]]['angleSet'][controller]
+        last_valid_key = 0
 
-            if current_cmd == 0:
-                time_series_data[keys[idx]]['angleSet'][controller] = last_valid_cmd
-            else:
-                last_valid_cmd = current_cmd
+        for idx in range(0, len(keys)):
+            current_key = keys[idx]
+            current_cmd = time_series_data[current_key]['angleSet'][controller]
+
+            dt = current_key - last_valid_key
+
+            # Not enough time has passed to change command
+            if dt % update_rate_ms == 0 and current_cmd != last_valid_cmd:
+                last_valid_key = current_key
+
+                # Check the next value...if they are the same, accept the input
+                if (current_key + update_rate_ms) in keys:
+                    next1 = time_series_data[current_key + update_rate_ms]['angleSet'][controller]
+
+                    if next1 == current_cmd:
+                        last_valid_cmd = current_cmd
+
+            time_series_data[keys[idx]]['angleSet'][controller] = last_valid_cmd
+
+
 
     # Then finish up with the rate controller
     for controller in range(0, 3):
         last_valid_cmd = 0
-        for idx in range(0, len(time_series_data.keys())):
-            current_cmd = time_series_data[keys[idx]]['rateSet'][controller]
+        last_valid_key = 0
 
-            if current_cmd == 0:
-                time_series_data[keys[idx]]['rateSet'][controller] = last_valid_cmd
-            else:
+        for idx in range(0, len(keys)):
+            current_key = keys[idx]
+            current_cmd = time_series_data[current_key]['rateSet'][controller]
+
+            dt = current_key - last_valid_key
+
+            # Rate controller is far more volatile than the angle controller, so accept
+            # any change
+            if dt % update_rate_ms == 0 and current_cmd != last_valid_cmd:
+                last_valid_key = current_key
                 last_valid_cmd = current_cmd
+
+            time_series_data[keys[idx]]['rateSet'][controller] = last_valid_cmd
 
     # ------------------------------
     # Wrap up / Clean up
     # ------------------------------
+    print("\tWriting results to file...")
     write_time_series_to_file(filename=output_TSInterpCSVFIle,
                               header_str=header_timeSeriesCSV,
                               data=time_series_data)
@@ -403,4 +447,4 @@ if __name__ == "__main__":
 
     raw_data_2_csv()
     create_time_series_from_csv_logs()
-    # smooth_time_series_data()
+    smooth_time_series_data()

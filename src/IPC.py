@@ -1,3 +1,4 @@
+import sys
 import socket
 
 
@@ -5,18 +6,24 @@ class TCPSocket:
     def __init__(self, host_ip, port_num):
         self.host = host_ip
         self.port = port_num
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcpServer.settimeout(10)
 
         self.connection = None
         self.client_addr = None
 
     def connect(self):
-        self.socket.bind((self.host, self.port))
-        self.listen(1)
+        self.tcpServer.bind((self.host, self.port))
+        self.tcpServer.listen(1)
 
         print('Waiting for connection...')
-        self.connection, self.client_addr = self.socket.accept()
-        print('Connected by client', self.client_addr)
+        try:
+            self.connection, self.client_addr = self.tcpServer.accept()
+            print('Connected by client', self.client_addr)
+
+        except socket.timeout:
+            print("Did not receive connection in time. Cannot perform inference.")
+            sys.exit(1)
 
     def close(self):
         self.connection.close()

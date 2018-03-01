@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import time
 import tflearn
 import tensorflow as tf
 import numpy as np
@@ -23,26 +24,7 @@ characteristics. See:
      https://www.mathworks.com/help/matlab/matlab_external/call-user-script-and-function-from-python.html
      https://www.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
      
-     
-inputs = [np.arange(5), np.arange(5), np.arange(5), np.arange(5)]
-inputs = np.reshape(inputs, (4, 5))
-print(inputs)
-
-inputs = np.roll(inputs, 1, axis=1)
-print(inputs)
-
-for i in range(5, 10):
-    print(i)
-    inputs[:,0] = np.array([i, i, i, i])
-    print(inputs)
-
-    print('Rolling...')
-    inputs = np.roll(inputs, 1, axis=1)
-    print(inputs)
-    print('\n')
 """
-
-
 class StepResponseMetrics:
     def __init__(self):
         self.rise_time = 0
@@ -56,8 +38,10 @@ class DroneModel:
         self._euler_chkpt_path = tf_euler_chkpt_path
         self._gyro_chkpt_path = tf_gyro_chkpt_path
 
-        self._euler_model = None    # Predicts Euler Angle Outputs
-        self._gyro_model = None     # Predicts Gyro Sensor Outputs
+        self._euler_model = None
+        self._euler_cfg = None
+        self._gyro_model = None
+        self._gyro_cfg = None
 
         self._euler_graph = tf.Graph()
         self._gyro_graph = tf.Graph()
@@ -70,6 +54,15 @@ class DroneModel:
 
         self._sample_time_mS = 2.0
 
+        self.gyro_symmetric_range_actual = 2000.0       # The actual +/- data range recorded by the gyro
+        self.gyro_symmetric_range_mapped = 10.0         # The desired +/- data range input for the NN
+
+        self.motor_range_actual_max = 1860              # ESC input max throttle signal in mS
+        self.motor_range_actual_min = 1060              # ESC input min throttle signal in mS
+
+        self.motor_range_mapped_max = 10.0              # NN input max throttle signal (unitless)
+        self.motor_range_mapped_min = 0.0               # NN input min throttle signal (unitless)
+
     def initialize(self, euler_cfg_path, gyro_cfg_path):
         """
         Do things like set up the time series inputs for things like
@@ -77,46 +70,54 @@ class DroneModel:
         :return:
         """
 
+        # TODO: Add a check for whether or not it is lstm or rnn...i just spent 5 min debugging that...
+        # -----------------------------
         # Setup the Euler prediction network
+        # -----------------------------
         with self._euler_graph.as_default(), tf.variable_scope('euler'):
             print("Initializing Euler Model...")
-            euler_cfg = TFModels.ModelConfig()
-            euler_cfg.load(euler_cfg_path)
+            self._euler_cfg = TFModels.ModelConfig()
+            self._euler_cfg.load(euler_cfg_path)
 
-            # TODO: Add a check for whether or not it is lstm or rnn...i just spent 5 min debugging that...
-            self._euler_model = TFModels.drone_lstm_model(dim_in=euler_cfg.input_size,
-                                                         dim_out=euler_cfg.output_size,
-                                                         past_depth=euler_cfg.input_depth,
-                                                         layer_neurons=euler_cfg.neurons_per_layer,
-                                                         layer_dropout=euler_cfg.layer_dropout,
-                                                         learning_rate=euler_cfg.learning_rate)
+            self._euler_model = TFModels.drone_lstm_model(dim_in=self._euler_cfg.input_size,
+                                                         dim_out=self._euler_cfg.output_size,
+                                                         past_depth=self._euler_cfg.input_depth,
+                                                         layer_neurons=self._euler_cfg.neurons_per_layer,
+                                                         layer_dropout=self._euler_cfg.layer_dropout,
+                                                         learning_rate=self._euler_cfg.learning_rate)
 
             self._euler_model.load(self._euler_chkpt_path)
             print("Loaded archived Euler model.")
 
+        # -----------------------------
         # Setup the Gyro prediction network
+        # -----------------------------
         with self._gyro_graph.as_default(), tf.variable_scope('gyro'):
             print("Initializing Gyro Model...")
-            gyro_cfg = TFModels.ModelConfig()
-            gyro_cfg.load(gyro_cfg_path)
+            self._gyro_cfg = TFModels.ModelConfig()
+            self._gyro_cfg.load(gyro_cfg_path)
 
-            self._gyro_model = TFModels.drone_lstm_model(dim_in=gyro_cfg.input_size,
-                                                         dim_out=gyro_cfg.output_size,
-                                                         past_depth=gyro_cfg.input_depth,
-                                                         layer_neurons=gyro_cfg.neurons_per_layer,
-                                                         layer_dropout=gyro_cfg.layer_dropout,
-                                                         learning_rate=gyro_cfg.learning_rate)
+            self._gyro_model = TFModels.drone_lstm_model(dim_in=self._gyro_cfg.input_size,
+                                                         dim_out=self._gyro_cfg.output_size,
+                                                         past_depth=self._gyro_cfg.input_depth,
+                                                         layer_neurons=self._gyro_cfg.neurons_per_layer,
+                                                         layer_dropout=self._gyro_cfg.layer_dropout,
+                                                         learning_rate=self._gyro_cfg.learning_rate)
 
             self._gyro_model.load(self._gyro_chkpt_path)
             print("Loaded archived Gyro model.")
 
-        # Setup the Matlab environment
+        # -----------------------------
+        # Setup the Matlab Engine
+        # -----------------------------
         # print("Starting Matlab Engine")
         # self._matlab_engine = matlab.engine.start_matlab()
         # self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
         # print("Done")
 
+        # -----------------------------
         # Setup the PID controllers
+        # -----------------------------
         self._pitch_ctrl = AxisController(angular_rate_range=100.0,
                                           motor_cmd_range=500.0,
                                           angle_direction=False,
@@ -136,121 +137,14 @@ class DroneModel:
                                         sample_time_ms=self._sample_time_mS)
 
     def TESTFUNC(self):
-        timeSeries = pd.read_csv('DroneData/csv/timeSeriesInferenceDataSmoothed.csv')
-        # timeSeries = pd.read_csv('DroneData/csv/timeSeriesDataInterpolated.csv')
+        print(np.interp(1460,
+                        [self.motor_range_actual_min, self.motor_range_actual_max],
+                        [self.motor_range_mapped_min, self.motor_range_mapped_max]))
 
-        angles = np.array([timeSeries['pitch'],
-                           timeSeries['roll'],
-                           timeSeries['yaw']]).transpose()
-
-        rates = np.array([timeSeries['gx'],
-                          timeSeries['gy'],
-                          timeSeries['gz']]).transpose()
-
-        angle_setpoints = np.array([timeSeries['asp'],
-                                    timeSeries['asr'],
-                                    timeSeries['asy']]).transpose()
-
-        rate_setpoints = np.array([timeSeries['rsp'],
-                                   timeSeries['rsr'],
-                                   timeSeries['rsy']]).transpose()
-
-        motor_outputs = np.array([timeSeries['m1CMD'],
-                                  timeSeries['m2CMD'],
-                                  timeSeries['m3CMD'],
-                                  timeSeries['m4CMD']]).transpose()
-
-        # Column accessor indices
-        pitch = 0
-        roll = 1
-        yaw = 2
-
-        samples = 100000
-
-        actual = {'angle_setpoint': {'pitch': [], 'roll': [], 'yaw': []},
-                  'angle_feedback': {'pitch': [], 'roll': [], 'yaw': []},
-                  'rate_setpoint': {'pitch': [], 'roll': [], 'yaw': []},
-                  'rate_feedback': {'pitch': [], 'roll': [], 'yaw': []},
-                  'motor_output': {'m1': [], 'm2': [], 'm3': [], 'm4': []}}
-
-        predicted = {'angle_setpoint': {'pitch': [], 'roll': [], 'yaw': []},
-                     'angle_feedback': {'pitch': [], 'roll': [], 'yaw': []},
-                     'rate_setpoint': {'pitch': [], 'roll': [], 'yaw': []},
-                     'rate_feedback': {'pitch': [], 'roll': [], 'yaw': []},
-                     'motor_output': {'m1': [], 'm2': [], 'm3': [], 'm4': []}}
-
-        base_throttle = 1160.0
-        for val in range(0, samples):
-            # Update PID controller inputs
-            self._pitch_ctrl.angle_setpoint = angle_setpoints[val, pitch]
-            self._pitch_ctrl.angle_feedback = angles[val, pitch]
-            self._pitch_ctrl.rate_feedback = rates[val, 1]                  # Pitch about +Y axis
-
-            self._roll_ctrl.angle_setpoint = angle_setpoints[val, roll]
-            self._roll_ctrl.angle_feedback = angles[val, roll]
-            self._roll_ctrl.rate_feedback = -1.0*rates[val, 0]              # Roll about -X axis
-
-            self._yaw_ctrl.angle_setpoint = angle_setpoints[val, yaw]
-            self._yaw_ctrl.angle_feedback = angles[val, yaw]
-            self._yaw_ctrl.rate_feedback = rates[val, 2]                    # Yaw about Z axis
-
-            # Update the controller output
-            self._pitch_ctrl.compute()
-            self._roll_ctrl.compute()
-            self._yaw_ctrl.compute()
-
-            # Update the motor outputs
-            pitch_cmd = self._pitch_ctrl.controller_output
-            roll_cmd = self._roll_ctrl.controller_output
-            yaw_cmd = self._yaw_ctrl.controller_output
-
-            motor_signal = MotorController.generate_motor_signals(base_throttle, pitch_cmd, roll_cmd, yaw_cmd)
-
-            # Log for plotting later
-            predicted['angle_setpoint']['pitch'].append(self._pitch_ctrl.angle_setpoint)
-            predicted['angle_setpoint']['roll'].append(self._roll_ctrl.angle_setpoint)
-            predicted['angle_setpoint']['yaw'].append(self._yaw_ctrl.angle_setpoint)
-
-            actual['angle_setpoint']['pitch'].append(angle_setpoints[val, pitch])
-            actual['angle_setpoint']['roll'].append(angle_setpoints[val, roll])
-            actual['angle_setpoint']['yaw'].append(angle_setpoints[val, yaw])
-
-            predicted['rate_setpoint']['pitch'].append(self._pitch_ctrl.angular_rate_desired)
-            actual['rate_setpoint']['pitch'].append(rate_setpoints[val, pitch])
-
-            predicted['motor_output']['m1'].append(motor_signal[0])
-            predicted['motor_output']['m2'].append(motor_signal[1])
-            predicted['motor_output']['m3'].append(motor_signal[2])
-            predicted['motor_output']['m4'].append(motor_signal[3])
-
-            actual['motor_output']['m1'].append(motor_outputs[val, 0])
-            actual['motor_output']['m2'].append(motor_outputs[val, 1])
-            actual['motor_output']['m3'].append(motor_outputs[val, 2])
-            actual['motor_output']['m4'].append(motor_outputs[val, 3])
-
-
-        # plt.figure(figsize=(16, 4))
-        # plt.suptitle('Pitch Angle')
-        # plt.plot(predicted['angle_setpoint']['pitch'], label='Pitch Py')
-        # plt.plot(predicted['angle_setpoint']['roll'], label='Roll Py')
-        # plt.plot(predicted['angle_setpoint']['yaw'], label='Yaw Py')
-        # plt.plot(actual['angle_setpoint']['pitch'], label='Pitch Drone')
-        # plt.plot(actual['angle_setpoint']['roll'], label='Roll Drone')
-        # plt.plot(actual['angle_setpoint']['yaw'], label='Yaw Drone')
-        # plt.legend()
-
-        # plt.figure(figsize=(16, 4))
-        # plt.suptitle('Pitch Actual Vs Predicted')
-        # plt.plot(predicted['motor_output']['m1'], 'c-', label='M1 Predicted')
-        # plt.plot(actual['motor_output']['m1'], 'b-', label='M1 Actual')
-        # plt.legend()
-
-        plt.figure(figsize=(16, 4))
-        plt.suptitle('Pitch Rate Actual Vs Predicted')
-        plt.plot(predicted['rate_setpoint']['pitch'], 'c-', label='Pitch Rate Predicted')
-        plt.plot(actual['rate_setpoint']['pitch'], 'b-', label='Pitch Rate Actual')
-        plt.legend()
-        plt.show()
+        print("Test of vector interpolation")
+        print(np.interp([[-2000, -1000, 0.0, 100, 1000, 2000], [-2000, -1000, 0.0, 100, 1000, 2000]],
+                        [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
+                        [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped]))
 
     def set_pitch_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
         self._pitch_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
@@ -264,49 +158,93 @@ class DroneModel:
         self._yaw_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
         self._yaw_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
 
-    def simulate_pitch_step(self, step_size, sim_length):
+    @property
+    def pitch_pid(self):
+        return dict({'angles': [self._pitch_ctrl.angleController.kp,
+                                self._pitch_ctrl.angleController.ki,
+                                self._pitch_ctrl.angleController.kd],
+                     'rates':  [self._pitch_ctrl.rateController.kp,
+                                self._pitch_ctrl.rateController.ki,
+                                self._pitch_ctrl.rateController.kd]})
+
+    @property
+    def roll_pid(self):
+        return dict({'angles': [self._roll_ctrl.angleController.kp,
+                                self._roll_ctrl.angleController.ki,
+                                self._roll_ctrl.angleController.kd],
+                     'rates': [self._roll_ctrl.rateController.kp,
+                               self._roll_ctrl.rateController.ki,
+                               self._roll_ctrl.rateController.kd]})
+
+    @property
+    def yaw_pid(self):
+        return dict({'angles': [self._yaw_ctrl.angleController.kp,
+                                self._yaw_ctrl.angleController.ki,
+                                self._yaw_ctrl.angleController.kd],
+                     'rates': [self._yaw_ctrl.rateController.kp,
+                               self._yaw_ctrl.rateController.ki,
+                               self._yaw_ctrl.rateController.kd]})
+
+    def simulate_pitch_step(self, step_input_delta, step_enable_t0, num_sim_steps):
         """
 
-        :param step_size:
-        :param sim_length:
+        :param step_input_delta:
+        :param step_enable_t0:
+        :param num_sim_steps:
         :return: (1 x sim_length) ndarray of pitch response
         """
-
-        step_time_threshold = 5
+        assert(np.isscalar(step_input_delta))
+        assert(np.isscalar(step_enable_t0))
+        assert(np.isscalar(num_sim_steps))
 
         # Input history indices
-        asp_idx = 4     # Angle setpoint Pitch
-        asr_idx = 5     # Angle setpoint Roll
+        asp_idx = 0     # Angle setpoint Pitch
+        asr_idx = 1     # Angle setpoint Roll
+        asy_idx = 2     # Angle setpoint Yaw
 
         # Output history indices
-        pitch_angle_idx = 0
-        roll_angle_idx = 1
-        gx_idx = 2
-        gy_idx = 3
+        pit_idx = 0     # Pitch Angle
+        rol_idx = 1     # Roll Angle
+        gx_idx = 0      # MEMS Gyro X axis rotation rate
+        gy_idx = 1      # MEMS Gyro Y axis rotation rate
 
+        # Network dimensions
+        dim_in = self._euler_cfg.input_size         # == self._gyro_cfg.input_size
+        dim_depth = self._euler_cfg.input_depth     # == self._gyro_cfg.input_depth
+        dim_out = self._euler_cfg.output_size       # == self._gyro_cfg.output_size
 
-        # TODO: Take these values from the NN configuration files
-        input_history = np.zeros([10, 6])       # Latest value is FIRST
-        output_history = np.zeros([4, 1])       # Latest value is LAST
+        # Buffers for working with the NN
+        input_history = np.zeros([dim_in, dim_depth])       # Latest value is in FIRST column [:, 0}
+        euler_output_history = np.zeros([dim_out, 1])       # Latest value is LAST [:, -1]
+        gyro_output_history = np.zeros([dim_out, 1])        # Latest value is LAST [:, -1]
+
+        angle_setpoint_history = np.zeros([3, num_sim_steps])
 
         base_throttle = 1160.0
 
-        for sim_step in range(0, sim_length):
+        # -----------------------------------
+        # Run the full simulation of the input signals
+        # -----------------------------------
+        print("Starting simulation of pitch step input...")
+        start_time = time.perf_counter()
 
-            # Enable the step input
-            if sim_step >= step_time_threshold:
-                input_history[asp_idx, 0] = step_size
+        for sim_step in range(0, num_sim_steps):
+
+            if sim_step >= step_enable_t0:
+                angle_setpoint_history[asp_idx, sim_step] = step_input_delta
 
             # -----------------------------------
             # Generate a new motor signal
             # -----------------------------------
-            pitch_cmd = self._step_pitch_controller(input_history[asp_idx, 0],              # Last pitch angle cmd input
-                                                    output_history[pitch_angle_idx, -1],    # Last computed pitch angle
-                                                    output_history[gy_idx, -1])             # Last computed pitch rate
+            pitch_cmd = self._step_pitch_controller(
+                angle_setpoint_history[asp_idx, sim_step],  # Last pitch angle cmd input
+                euler_output_history[pit_idx, -1],          # Last computed pitch angle
+                gyro_output_history[gy_idx, -1])            # Last computed pitch rate
 
-            roll_cmd = self._step_roll_controller(input_history[asr_idx, 0],                # Last roll angle cmd input
-                                                  output_history[roll_angle_idx, -1],       # Last computed roll angle
-                                                 -output_history[gx_idx, -1])               # Last computed roll rate
+            roll_cmd = self._step_roll_controller(
+                angle_setpoint_history[asr_idx, sim_step],  # Last roll angle cmd input
+                euler_output_history[rol_idx, -1],          # Last computed roll angle
+                -gyro_output_history[gx_idx, -1])           # Last computed roll rate
 
             yaw_cmd = 0
 
@@ -318,45 +256,48 @@ class DroneModel:
             new_input_column = np.r_[motor_signal[0],
                                      motor_signal[1],
                                      motor_signal[2],
-                                     motor_signal[3],
-                                     input_history[asp_idx, 0],
-                                     input_history[asr_idx, 0]].reshape(6, 1)
-            assert(np.shape(new_input_column) == (6, 1))
+                                     motor_signal[3]].reshape(dim_in, 1)
+            assert(np.shape(new_input_column) == (dim_in, 1)), "Your model input is the wrong shape!!"
 
-            # Roll the time history array so that the oldest value pops up @ index zero
+            # Roll the time history column-wise so that the oldest value pops up @ index zero
             input_history = np.roll(input_history, 1, axis=1)
 
-            # Replace the now old value with the latest value
+            # Replace the now old column with the latest
             input_history[:, 0] = new_input_column[:, 0]
 
+            # Expands matrix dimensions for NN compatibility
+            nn_motor_input = np.expand_dims(input_history, axis=0)
+            assert(np.shape(nn_motor_input) == (1, dim_in, dim_depth)), "You realize your depth size is last right?"
+
             # -----------------------------------
-            # Pass the input to the Euler and Gyro networks
+            # Map the input data into the range expected by the NN
             # -----------------------------------
-            # Formats the data into a [10, 6] matrix
-            X = input_history.transpose()
+            nn_motor_input = self._real_motor_data_to_mapped(nn_motor_input)
 
-            # Expands matrix dimensions to be [1, 10, 6] for NN compatibility
-            X = np.expand_dims(input_history, axis=0)
+            # -----------------------------------
+            # Predict new Euler/Gyro outputs
+            # -----------------------------------
+            # Generate predictions in the training space
+            euler_data = self._euler_model.predict(nn_motor_input)
+            gyro_data = self._gyro_model.predict(nn_motor_input)
 
-            revert back to 6 x N input size...
+            # Convert training space data to real world data
+            gyro_data = self._mapped_gyro_data_to_real(gyro_data)
 
-            euler_data = self._euler_model.predict(X)
-            gyro_data = self._gyro_model.predict(X)
+            # -----------------------------------
+            # Update the output buffers with the latest predictions
+            # -----------------------------------
+            new_euler_output_column = np.array([euler_data[0][pit_idx], euler_data[0][rol_idx]]).reshape(2, 1)
+            euler_output_history = np.append(euler_output_history, new_euler_output_column, axis=1)
 
-            # model predict....x2
-            _gx = gyro_data[0][0]
-            _gy = gyro_data[0][1]
-            _pitch = euler_data[0][0]
-            _roll = euler_data[0][1]
-            new_output_column = np.array([_pitch, _roll, _gx, _gy]).reshape(4, 1)
+            new_gyro_output_column = np.array([gyro_data[0][gx_idx], gyro_data[0][gy_idx]]).reshape(2, 1)
+            gyro_output_history = np.append(gyro_output_history, new_gyro_output_column, axis=1)
 
-            output_history = np.append(output_history, new_output_column, axis=1)
+        end_time = time.perf_counter()
+        elapsed_time = end_time-start_time
+        print("Total Time: ", elapsed_time)
 
-        return output_history
-
-
-
-
+        return euler_output_history, gyro_output_history, angle_setpoint_history, input_history
 
     def simulate_roll_step(self, step_size, sim_length):
         raise NotImplementedError
@@ -381,7 +322,6 @@ class DroneModel:
 
     def _parse_model_config(self):
         raise NotImplementedError
-
 
     def _step_pitch_controller(self, angle_setpoint, angle_feedback, rate_feedback):
         self._pitch_ctrl.angle_setpoint = angle_setpoint
@@ -410,6 +350,25 @@ class DroneModel:
 
         return self._yaw_ctrl.controller_output
 
+    def _mapped_gyro_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped],
+                         [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual])
+
+    def _real_gyro_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
+                         [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped])
+
+    def _mapped_motor_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [self.motor_range_mapped_min, self.motor_range_mapped_max],
+                         [self.motor_range_actual_min, self.motor_range_actual_max])
+
+    def _real_motor_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [self.motor_range_actual_min, self.motor_range_actual_max],
+                         [self.motor_range_mapped_min, self.motor_range_mapped_max])
 
 
 if __name__ == "__main__":

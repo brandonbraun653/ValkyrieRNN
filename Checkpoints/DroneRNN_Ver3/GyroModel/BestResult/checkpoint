@@ -1,2 +1,2 @@
-model_checkpoint_path: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\GyroModel\\BestResult\\gyro_model.tfl.ckpt9110"
-all_model_checkpoint_paths: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\GyroModel\\BestResult\\gyro_model.tfl.ckpt9110"
+model_checkpoint_path: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\GyroModel\\BestResult\\gyro_model.tfl.ckpt8792"
+all_model_checkpoint_paths: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\GyroModel\\BestResult\\gyro_model.tfl.ckpt8792"

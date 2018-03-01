@@ -11,10 +11,8 @@ import matplotlib
 matplotlib.use('Agg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
 import matplotlib.pyplot as plt
 
-
-
-
 if __name__ == "__main__":
+    train_small_for_testing = True
     reparse_input_data = False
     train_euler_model = False
     train_gyro_model = True
@@ -22,6 +20,9 @@ if __name__ == "__main__":
     max_cpu_cores = 16
     max_gpu_mem = 0.8
     max_input_depth = 1250
+
+    if train_small_for_testing:
+        max_input_depth = 100
 
     # ---------------------------------------
     # Update the input data into the model for training
@@ -45,14 +46,23 @@ if __name__ == "__main__":
         cfg.epoch_len = 10
         cfg.neurons_per_layer = 512
         cfg.layer_dropout = (0.8, 0.8)
-        cfg.save('euler_model_cfg.csv')
-        train_data_len = 75 * 1000      # TODO: Should this be put in the cfg object?
+        train_data_len = 75 * 1000  # TODO: Should this be put in the cfg object?
 
         # Add a few configurations for saving the model at various stages in training
-        rawDataPath     = 'DroneData/csv/timeSeriesDataSmoothed.csv'
-        ckpt_path       = 'Checkpoints/DroneRNN_Ver3/EulerModel/' + cfg.model_name + '.ckpt'
-        best_ckpt_path  = 'Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/' + cfg.model_name + '.ckpt'
-        last_ckpt_path  = 'Checkpoints/DroneRNN_Ver3/EulerModel/LastResult/' + cfg.model_name + '.ckpt'
+        rawDataPath = 'DroneData/csv/timeSeriesDataSmoothed.csv'
+        ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/' + cfg.model_name + '.ckpt'
+        best_ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/' + cfg.model_name + '.ckpt'
+        last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/LastResult/' + cfg.model_name + '.ckpt'
+
+        if train_small_for_testing:
+            cfg.epoch_len = 1
+            cfg.neurons_per_layer = 32
+            train_data_len = 10 * 1000
+            last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/SmallTesting/' + cfg.model_name + '.ckpt'
+
+        cfg.save('euler_model_cfg.csv')
+
+
 
         # Now actually do the training
         print("STARTING TRAINING OF EULER MODEL")
@@ -83,7 +93,7 @@ if __name__ == "__main__":
                                                   layer_neurons=cfg.neurons_per_layer,
                                                   layer_dropout=cfg.layer_dropout,
                                                   learning_rate=cfg.learning_rate,
-                                                  checkpoint_path=ckpt_path,
+                                                  checkpoint_path='',
                                                   best_checkpoint_path=best_ckpt_path)
 
                 # Train the above model with the full dataset being broken up into
@@ -171,7 +181,6 @@ if __name__ == "__main__":
         cfg.epoch_len = 10
         cfg.neurons_per_layer = 512
         cfg.layer_dropout = (0.8, 0.8)
-        cfg.save('gyro_model_cfg.csv')
         train_data_len = 75 * 1000  # TODO: Should this be put in the cfg object?
 
         # Add a few configurations for saving the model at various stages in training
@@ -179,6 +188,14 @@ if __name__ == "__main__":
         ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/' + cfg.model_name + '.ckpt'
         best_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/' + cfg.model_name + '.ckpt'
         last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/LastResult/' + cfg.model_name + '.ckpt'
+
+        if train_small_for_testing:
+            cfg.epoch_len = 1
+            cfg.neurons_per_layer = 32
+            train_data_len = 10 * 1000
+            last_ckpt_path = 'Checkpoints/DroneRNN_Ver3/GyroModel/SmallTesting/' + cfg.model_name + '.ckpt'
+
+        cfg.save('gyro_model_cfg.csv')
 
         # Now actually do the training
         print("STARTING TRAINING OF GYRO MODEL")
@@ -208,7 +225,7 @@ if __name__ == "__main__":
                                                   layer_neurons=cfg.neurons_per_layer,
                                                   layer_dropout=cfg.layer_dropout,
                                                   learning_rate=cfg.learning_rate,
-                                                  checkpoint_path=ckpt_path,
+                                                  checkpoint_path='',
                                                   best_checkpoint_path=best_ckpt_path)
 
                 # Train the above model with the full dataset being broken up into

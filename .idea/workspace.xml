@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9bd695f4-e2da-413c-ad9d-af39ac750c4b" name="Default" comment="" />
+    <list default="true" id="9bd695f4-e2da-413c-ad9d-af39ac750c4b" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/brand.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/brand.xml" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/checkpoint" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/checkpoint" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.data-00000-of-00001" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.data-00000-of-00001" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.index" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.index" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.meta" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/euler_model.tfl.ckpt5588.meta" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/checkpoint" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/checkpoint" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.data-00000-of-00001" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.data-00000-of-00001" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.index" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.index" />
+      <change beforePath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.meta" afterPath="$PROJECT_DIR$/Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/gyro_model.tfl.ckpt10000.meta" />
+      <change beforePath="$PROJECT_DIR$/DroneRNN_Inference.py" afterPath="$PROJECT_DIR$/DroneRNN_Inference.py" />
+      <change beforePath="$PROJECT_DIR$/DroneRNN_Training.py" afterPath="$PROJECT_DIR$/DroneRNN_Training.py" />
+      <change beforePath="$PROJECT_DIR$/euler_model_cfg.csv" afterPath="$PROJECT_DIR$/euler_model_cfg.csv" />
+      <change beforePath="$PROJECT_DIR$/gyro_model_cfg.csv" afterPath="$PROJECT_DIR$/gyro_model_cfg.csv" />
+      <change beforePath="$PROJECT_DIR$/src/ControlSystem.py" afterPath="$PROJECT_DIR$/src/ControlSystem.py" />
+      <change beforePath="$PROJECT_DIR$/src/IPC.py" afterPath="$PROJECT_DIR$/src/IPC.py" />
+      <change beforePath="$PROJECT_DIR$/src/Inference.py" afterPath="$PROJECT_DIR$/src/Inference.py" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -10,7 +27,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Inference.coverage" NAME="DroneRNN_Inference Coverage Results" MODIFIED="1519775380275" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Inference.coverage" NAME="DroneRNN_Inference Coverage Results" MODIFIED="1519946146641" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Ver1.coverage" NAME="DroneRNN_Ver1 Coverage Results" MODIFIED="1519091621456" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$MotorController.coverage" NAME="MotorController Coverage Results" MODIFIED="1519441209799" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$ControlSystem.coverage" NAME="ControlSystem Coverage Results" MODIFIED="1519434612094" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
@@ -20,17 +37,69 @@
     <SUITE FILE_PATH="coverage/ValkyrieRNN$RawData2CSV.coverage" NAME="RawData2CSV Coverage Results" MODIFIED="1519709333282" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Scripts" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation_MISO.coverage" NAME="NonLinearApproximation_MISO Coverage Results" MODIFIED="1519168606209" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation.coverage" NAME="NonLinearApproximation Coverage Results" MODIFIED="1519096334492" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
-    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Training.coverage" NAME="DroneRNN_Training Coverage Results" MODIFIED="1519768592465" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ValkyrieRNN$DroneRNN_Training.coverage" NAME="DroneRNN_Training Coverage Results" MODIFIED="1519941644453" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ValkyrieRNN$NonLinearApproximation_MIMO_Chaos.coverage" NAME="NonLinearApproximation_MIMO_Chaos Coverage Results" MODIFIED="1519172781142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RNNTutorials" />
+  </component>
+  <component name="DockManager">
+    <window id="1">
+      <content type="file-editors">
+        <state>
+          <leaf>
+            <file leaf-file-name="Inference.py" pinned="false" current-in-tab="true">
+              <entry file="file://$PROJECT_DIR$/src/Inference.py">
+                <provider selected="true" editor-type-id="text-editor">
+                  <state relative-caret-position="648">
+                    <caret line="324" column="0" lean-forward="false" selection-start-line="324" selection-start-column="0" selection-end-line="324" selection-end-column="0" />
+                    <folding>
+                      <element signature="e#0#64#0" expanded="true" />
+                      <element signature="e#930#1078#0" expanded="false" />
+                      <element signature="e#1178#2238#0" expanded="false" />
+                      <element signature="e#2305#6132#0" expanded="false" />
+                      <element signature="e#2793#3636#0" expanded="false" />
+                      <element signature="e#3845#4674#0" expanded="false" />
+                      <element signature="e#6166#6696#0" expanded="false" />
+                      <element signature="e#6797#6928#0" expanded="false" />
+                      <element signature="e#7028#7157#0" expanded="false" />
+                      <element signature="e#7256#7383#0" expanded="false" />
+                      <element signature="e#7432#7837#0" expanded="false" />
+                      <element signature="e#7885#8281#0" expanded="false" />
+                      <element signature="e#8328#8718#0" expanded="false" />
+                      <element signature="e#8812#14052#0" expanded="false" />
+                      <element signature="e#10524#13828#0" expanded="false" />
+                      <element signature="e#14119#14144#0" expanded="false" />
+                      <element signature="e#14247#14478#0" expanded="false" />
+                      <element signature="e#14522#14681#0" expanded="false" />
+                      <element signature="e#14726#14751#0" expanded="false" />
+                      <element signature="e#14846#15093#0" expanded="false" />
+                      <element signature="e#15187#15429#0" expanded="false" />
+                      <element signature="e#15522#15759#0" expanded="false" />
+                      <element signature="e#15824#16046#0" expanded="false" />
+                      <element signature="e#16111#16333#0" expanded="false" />
+                      <element signature="e#16399#16599#0" expanded="false" />
+                      <element signature="e#16665#16865#0" expanded="false" />
+                    </folding>
+                  </state>
+                </provider>
+              </entry>
+            </file>
+          </leaf>
+        </state>
+      </content>
+    </window>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
       <file leaf-file-name="DroneRNN_Training.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DroneRNN_Training.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="189">
-              <caret line="9" column="17" lean-forward="false" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
-              <folding />
+            <state relative-caret-position="270">
+              <caret line="280" column="0" lean-forward="true" selection-start-line="280" selection-start-column="0" selection-end-line="280" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#64#0" expanded="true" />
+                <element signature="e#847#973#0" expanded="false" />
+                <element signature="e#1142#7538#0" expanded="false" />
+                <element signature="e#2484#7538#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -38,8 +107,8 @@
       <file leaf-file-name="DroneRNN_Inference.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="630">
-              <caret line="41" column="18" lean-forward="false" selection-start-line="41" selection-start-column="18" selection-end-line="41" selection-end-column="18" />
+            <state relative-caret-position="246">
+              <caret line="20" column="18" lean-forward="true" selection-start-line="20" selection-start-column="18" selection-end-line="20" selection-end-column="18" />
               <folding>
                 <element signature="e#0#64#0" expanded="true" />
               </folding>
@@ -47,30 +116,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="pid.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/pid.py">
+      <file leaf-file-name="IPC.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/IPC.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="210">
-              <caret line="10" column="19" lean-forward="true" selection-start-line="10" selection-start-column="19" selection-end-line="10" selection-end-column="19" />
+            <state relative-caret-position="159">
+              <caret line="9" column="26" lean-forward="false" selection-start-line="9" selection-start-column="26" selection-end-line="9" selection-end-column="26" />
               <folding>
-                <element signature="e#0#15#0" expanded="true" />
-                <element signature="e#1734#1786#0" expanded="false" />
-                <element signature="e#3500#3519#0" expanded="false" />
-                <element signature="e#3551#3570#0" expanded="false" />
-                <element signature="e#3602#3621#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ControlSystem.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ControlSystem.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1071">
-              <caret line="51" column="41" lean-forward="false" selection-start-line="51" selection-start-column="41" selection-end-line="51" selection-end-column="41" />
-              <folding>
-                <element signature="e#2819#2947#0" expanded="false" />
-                <element signature="e#3000#3124#0" expanded="false" />
+                <element signature="e#0#10#0" expanded="true" />
+                <element signature="e#787#855#0" expanded="false" />
+                <element signature="e#893#930#0" expanded="false" />
+                <element signature="e#970#1016#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -111,11 +166,12 @@
         <option value="$PROJECT_DIR$/Scripts/DataStructures.py" />
         <option value="$PROJECT_DIR$/src/TensorFlowModels.py" />
         <option value="$PROJECT_DIR$/Scripts/RawData2CSV.py" />
+        <option value="$PROJECT_DIR$/src/pid.py" />
         <option value="$PROJECT_DIR$/DroneRNN_Training.py" />
-        <option value="$PROJECT_DIR$/DroneRNN_Inference.py" />
         <option value="$PROJECT_DIR$/src/ControlSystem.py" />
         <option value="$PROJECT_DIR$/src/Inference.py" />
-        <option value="$PROJECT_DIR$/src/pid.py" />
+        <option value="$PROJECT_DIR$/DroneRNN_Inference.py" />
+        <option value="$PROJECT_DIR$/src/IPC.py" />
       </list>
     </option>
   </component>
@@ -125,7 +181,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="2173" />
     <option name="y" value="213" />
     <option name="width" value="1074" />
@@ -248,6 +304,25 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
+    <configuration name="Inference" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ValkyrieRNN" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/Inference.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
     <configuration name="MotorController" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -286,39 +361,20 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="pid" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ValkyrieRNN" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/pid.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-    </configuration>
     <list size="5">
       <item index="0" class="java.lang.String" itemvalue="Python.DroneRNN_Inference" />
-      <item index="1" class="java.lang.String" itemvalue="Python.pid" />
-      <item index="2" class="java.lang.String" itemvalue="Python.MotorController" />
-      <item index="3" class="java.lang.String" itemvalue="Python.RawData2CSV" />
-      <item index="4" class="java.lang.String" itemvalue="Python.DroneRNN_Training" />
+      <item index="1" class="java.lang.String" itemvalue="Python.MotorController" />
+      <item index="2" class="java.lang.String" itemvalue="Python.RawData2CSV" />
+      <item index="3" class="java.lang.String" itemvalue="Python.DroneRNN_Training" />
+      <item index="4" class="java.lang.String" itemvalue="Python.Inference" />
     </list>
     <recent_temporary>
       <list size="5">
         <item index="0" class="java.lang.String" itemvalue="Python.DroneRNN_Inference" />
         <item index="1" class="java.lang.String" itemvalue="Python.DroneRNN_Training" />
-        <item index="2" class="java.lang.String" itemvalue="Python.RawData2CSV" />
-        <item index="3" class="java.lang.String" itemvalue="Python.MotorController" />
-        <item index="4" class="java.lang.String" itemvalue="Python.pid" />
+        <item index="2" class="java.lang.String" itemvalue="Python.Inference" />
+        <item index="3" class="java.lang.String" itemvalue="Python.RawData2CSV" />
+        <item index="4" class="java.lang.String" itemvalue="Python.MotorController" />
       </list>
     </recent_temporary>
   </component>
@@ -339,22 +395,22 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1911" y="41" width="1938" height="1048" extended-state="7" />
+    <frame x="1911" y="41" width="1938" height="1048" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29392266" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4088398" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15677084" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30911458" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="396" y="685" width="2175" height="543" />
+      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30885416" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="396" y="685" width="2175" height="543" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.08287293" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2685083" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -372,33 +428,11 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/pid.py</url>
-          <line>40</line>
-          <option name="timeStamp" value="57" />
-        </line-breakpoint>
-      </breakpoints>
-      <option name="time" value="58" />
+      <option name="time" value="62" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/DroneRNN_Training.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="625">
-          <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RNNTutorials/DroneRNN_Ver2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2225">
-          <caret line="153" column="18" lean-forward="false" selection-start-line="153" selection-start-column="18" selection-end-line="153" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Scripts/RawData2CSV.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3000">
@@ -410,6 +444,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1325">
           <caret line="77" column="57" lean-forward="true" selection-start-line="77" selection-start-column="57" selection-end-line="77" selection-end-column="57" />
+          <folding>
+            <element signature="e#461#1108#0" expanded="false" />
+            <element signature="e#1148#1707#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -448,7 +486,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="850">
           <caret line="44" column="31" lean-forward="true" selection-start-line="44" selection-start-column="31" selection-end-line="44" selection-end-column="31" />
-          <folding />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+            <element signature="e#847#973#0" expanded="false" />
+            <element signature="e#1142#7538#0" expanded="false" />
+            <element signature="e#2484#7538#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -470,6 +513,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="375">
           <caret line="18" column="12" lean-forward="false" selection-start-line="18" selection-start-column="12" selection-end-line="18" selection-end-column="12" />
+          <folding>
+            <element signature="e#461#1108#0" expanded="false" />
+            <element signature="e#1148#1707#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -639,13 +686,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1176">
           <caret line="83" column="0" lean-forward="false" selection-start-line="83" selection-start-column="0" selection-end-line="83" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/IPC.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#461#1108#0" expanded="false" />
+            <element signature="e#1148#1707#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -663,52 +707,107 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DroneRNN_Training.py">
+    <entry file="file://C:/Program Files/Python36/Lib/site-packages/tensorflow/python/client/session.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="9" column="17" lean-forward="false" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
+        <state relative-caret-position="124">
+          <caret line="1362" column="0" lean-forward="false" selection-start-line="1362" selection-start-column="0" selection-end-line="1362" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
+    <entry file="file://C:/Program Files/Python36/Lib/codecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="630">
-          <caret line="41" column="18" lean-forward="false" selection-start-line="41" selection-start-column="18" selection-end-line="41" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#64#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="116">
+          <caret line="308" column="0" lean-forward="false" selection-start-line="308" selection-start-column="0" selection-end-line="308" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Inference.py">
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Training.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="656">
-          <caret line="144" column="38" lean-forward="false" selection-start-line="144" selection-start-column="38" selection-end-line="144" selection-end-column="38" />
+        <state relative-caret-position="270">
+          <caret line="280" column="0" lean-forward="true" selection-start-line="280" selection-start-column="0" selection-end-line="280" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+            <element signature="e#847#973#0" expanded="false" />
+            <element signature="e#1142#7538#0" expanded="false" />
+            <element signature="e#2484#7538#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/ControlSystem.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1071">
-          <caret line="51" column="41" lean-forward="false" selection-start-line="51" selection-start-column="41" selection-end-line="51" selection-end-column="41" />
+        <state relative-caret-position="475">
+          <caret line="110" column="0" lean-forward="false" selection-start-line="110" selection-start-column="0" selection-end-line="110" selection-end-column="0" />
           <folding>
-            <element signature="e#2819#2947#0" expanded="false" />
-            <element signature="e#3000#3124#0" expanded="false" />
+            <element signature="e#3396#3767#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/pid.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="10" column="19" lean-forward="true" selection-start-line="10" selection-start-column="19" selection-end-line="10" selection-end-column="19" />
+        <state relative-caret-position="-1940">
+          <caret line="58" column="0" lean-forward="false" selection-start-line="58" selection-start-column="0" selection-end-line="58" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Inference.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="648">
+          <caret line="324" column="0" lean-forward="false" selection-start-line="324" selection-start-column="0" selection-end-line="324" selection-end-column="0" />
           <folding>
-            <element signature="e#0#15#0" expanded="true" />
-            <element signature="e#1734#1786#0" expanded="false" />
-            <element signature="e#3500#3519#0" expanded="false" />
-            <element signature="e#3551#3570#0" expanded="false" />
-            <element signature="e#3602#3621#0" expanded="false" />
+            <element signature="e#0#64#0" expanded="true" />
+            <element signature="e#930#1078#0" expanded="false" />
+            <element signature="e#1178#2238#0" expanded="false" />
+            <element signature="e#2305#6132#0" expanded="false" />
+            <element signature="e#2793#3636#0" expanded="false" />
+            <element signature="e#3845#4674#0" expanded="false" />
+            <element signature="e#6166#6696#0" expanded="false" />
+            <element signature="e#6797#6928#0" expanded="false" />
+            <element signature="e#7028#7157#0" expanded="false" />
+            <element signature="e#7256#7383#0" expanded="false" />
+            <element signature="e#7432#7837#0" expanded="false" />
+            <element signature="e#7885#8281#0" expanded="false" />
+            <element signature="e#8328#8718#0" expanded="false" />
+            <element signature="e#8812#14052#0" expanded="false" />
+            <element signature="e#10524#13828#0" expanded="false" />
+            <element signature="e#14119#14144#0" expanded="false" />
+            <element signature="e#14247#14478#0" expanded="false" />
+            <element signature="e#14522#14681#0" expanded="false" />
+            <element signature="e#14726#14751#0" expanded="false" />
+            <element signature="e#14846#15093#0" expanded="false" />
+            <element signature="e#15187#15429#0" expanded="false" />
+            <element signature="e#15522#15759#0" expanded="false" />
+            <element signature="e#15824#16046#0" expanded="false" />
+            <element signature="e#16111#16333#0" expanded="false" />
+            <element signature="e#16399#16599#0" expanded="false" />
+            <element signature="e#16665#16865#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DroneRNN_Inference.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="246">
+          <caret line="20" column="18" lean-forward="true" selection-start-line="20" selection-start-column="18" selection-end-line="20" selection-end-column="18" />
+          <folding>
+            <element signature="e#0#64#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/IPC.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="159">
+          <caret line="9" column="26" lean-forward="false" selection-start-line="9" selection-start-column="26" selection-end-line="9" selection-end-column="26" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#787#855#0" expanded="false" />
+            <element signature="e#893#930#0" expanded="false" />
+            <element signature="e#970#1016#0" expanded="false" />
           </folding>
         </state>
       </provider>

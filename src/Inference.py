@@ -14,6 +14,7 @@ import src.TensorFlowModels as TFModels
 import src.MotorController as MotorController
 from src.ControlSystem import AxisController
 
+from Scripts.Matlab.MatlabIOHelper import matlab_matrix_to_numpy, numpy_matrix_to_matlab
 """
 IMPORTANT NOTES:
 
@@ -80,11 +81,11 @@ class DroneModel:
             self._euler_cfg.load(euler_cfg_path)
 
             self._euler_model = TFModels.drone_lstm_model(dim_in=self._euler_cfg.input_size,
-                                                         dim_out=self._euler_cfg.output_size,
-                                                         past_depth=self._euler_cfg.input_depth,
-                                                         layer_neurons=self._euler_cfg.neurons_per_layer,
-                                                         layer_dropout=self._euler_cfg.layer_dropout,
-                                                         learning_rate=self._euler_cfg.learning_rate)
+                                                          dim_out=self._euler_cfg.output_size,
+                                                          past_depth=self._euler_cfg.input_depth,
+                                                          layer_neurons=self._euler_cfg.neurons_per_layer,
+                                                          layer_dropout=self._euler_cfg.layer_dropout,
+                                                          learning_rate=self._euler_cfg.learning_rate)
 
             self._euler_model.load(self._euler_chkpt_path)
             print("Loaded archived Euler model.")
@@ -110,14 +111,15 @@ class DroneModel:
         # -----------------------------
         # Setup the Matlab Engine
         # -----------------------------
-        # print("Starting Matlab Engine")
-        # self._matlab_engine = matlab.engine.start_matlab()
-        # self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
-        # print("Done")
+        print("Starting Matlab Engine")
+        self._matlab_engine = matlab.engine.start_matlab()
+        self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
+        print("Done")
 
         # -----------------------------
         # Setup the PID controllers
         # -----------------------------
+        print("Initializing PID Controllers")
         self._pitch_ctrl = AxisController(angular_rate_range=100.0,
                                           motor_cmd_range=500.0,
                                           angle_direction=False,
@@ -135,55 +137,7 @@ class DroneModel:
                                         angle_direction=True,
                                         rate_direction=True,
                                         sample_time_ms=self._sample_time_mS)
-
-    def TESTFUNC(self):
-        print(np.interp(1460,
-                        [self.motor_range_actual_min, self.motor_range_actual_max],
-                        [self.motor_range_mapped_min, self.motor_range_mapped_max]))
-
-        print("Test of vector interpolation")
-        print(np.interp([[-2000, -1000, 0.0, 100, 1000, 2000], [-2000, -1000, 0.0, 100, 1000, 2000]],
-                        [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
-                        [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped]))
-
-    def set_pitch_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
-        self._pitch_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
-        self._pitch_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
-
-    def set_roll_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
-        self._roll_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
-        self._roll_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
-
-    def set_yaw_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
-        self._yaw_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
-        self._yaw_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
-
-    @property
-    def pitch_pid(self):
-        return dict({'angles': [self._pitch_ctrl.angleController.kp,
-                                self._pitch_ctrl.angleController.ki,
-                                self._pitch_ctrl.angleController.kd],
-                     'rates':  [self._pitch_ctrl.rateController.kp,
-                                self._pitch_ctrl.rateController.ki,
-                                self._pitch_ctrl.rateController.kd]})
-
-    @property
-    def roll_pid(self):
-        return dict({'angles': [self._roll_ctrl.angleController.kp,
-                                self._roll_ctrl.angleController.ki,
-                                self._roll_ctrl.angleController.kd],
-                     'rates': [self._roll_ctrl.rateController.kp,
-                               self._roll_ctrl.rateController.ki,
-                               self._roll_ctrl.rateController.kd]})
-
-    @property
-    def yaw_pid(self):
-        return dict({'angles': [self._yaw_ctrl.angleController.kp,
-                                self._yaw_ctrl.angleController.ki,
-                                self._yaw_ctrl.angleController.kd],
-                     'rates': [self._yaw_ctrl.rateController.kp,
-                               self._yaw_ctrl.rateController.ki,
-                               self._yaw_ctrl.rateController.kd]})
+        print("Done")
 
     def simulate_pitch_step(self, step_input_delta, step_enable_t0, num_sim_steps):
         """
@@ -303,14 +257,65 @@ class DroneModel:
         raise NotImplementedError
 
     def simulate_coupled_pitch_roll_step(self, step_size_pitch, step_size_roll, sim_length):
-        """
-        The goal here is to allow for simulation of coupled axis movements
-        :param step_size_pitch:
-        :param step_size_roll:
-        :param sim_length:
-        :return:
-        """
         raise NotImplementedError
+
+    def analyze_step_performance_siso(self, input_data, expected_final_value):
+        assert(input_data.ndim == 1)
+        assert(np.isscalar(expected_final_value))
+
+        time_len = np.shape(input_data)
+        input_mdt = numpy_matrix_to_matlab(input_data)
+        time_mdt = numpy_matrix_to_matlab(np.arange(time_len[0]))
+        return self._matlab_engine.CalculateStepPerformance(input_mdt, time_mdt, expected_final_value)
+
+    def TESTFUNC(self):
+        print(np.interp(1460,
+                        [self.motor_range_actual_min, self.motor_range_actual_max],
+                        [self.motor_range_mapped_min, self.motor_range_mapped_max]))
+
+        print("Test of vector interpolation")
+        print(np.interp([[-2000, -1000, 0.0, 100, 1000, 2000], [-2000, -1000, 0.0, 100, 1000, 2000]],
+                        [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
+                        [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped]))
+
+    def set_pitch_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
+        self._pitch_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
+        self._pitch_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
+
+    def set_roll_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
+        self._roll_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
+        self._roll_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
+
+    def set_yaw_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
+        self._yaw_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
+        self._yaw_ctrl.update_rate_pid(kp_rate, ki_rate, kd_rate)
+
+    @property
+    def pitch_pid(self):
+        return dict({'angles': [self._pitch_ctrl.angleController.kp,
+                                self._pitch_ctrl.angleController.ki,
+                                self._pitch_ctrl.angleController.kd],
+                     'rates':  [self._pitch_ctrl.rateController.kp,
+                                self._pitch_ctrl.rateController.ki,
+                                self._pitch_ctrl.rateController.kd]})
+
+    @property
+    def roll_pid(self):
+        return dict({'angles': [self._roll_ctrl.angleController.kp,
+                                self._roll_ctrl.angleController.ki,
+                                self._roll_ctrl.angleController.kd],
+                     'rates': [self._roll_ctrl.rateController.kp,
+                               self._roll_ctrl.rateController.ki,
+                               self._roll_ctrl.rateController.kd]})
+
+    @property
+    def yaw_pid(self):
+        return dict({'angles': [self._yaw_ctrl.angleController.kp,
+                                self._yaw_ctrl.angleController.ki,
+                                self._yaw_ctrl.angleController.kd],
+                     'rates': [self._yaw_ctrl.rateController.kp,
+                               self._yaw_ctrl.rateController.ki,
+                               self._yaw_ctrl.rateController.kd]})
 
     def _smooth_raw_output(self):
         """

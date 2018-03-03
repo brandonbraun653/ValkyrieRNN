@@ -114,7 +114,6 @@ class DroneModel:
         print("Starting Matlab Engine")
         self._matlab_engine = matlab.engine.start_matlab()
         self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
-        print("Done")
 
         # -----------------------------
         # Setup the PID controllers
@@ -137,7 +136,6 @@ class DroneModel:
                                         angle_direction=True,
                                         rate_direction=True,
                                         sample_time_ms=self._sample_time_mS)
-        print("Done")
 
     def simulate_pitch_step(self, step_input_delta, step_enable_t0, num_sim_steps):
         """
@@ -259,13 +257,15 @@ class DroneModel:
     def simulate_coupled_pitch_roll_step(self, step_size_pitch, step_size_roll, sim_length):
         raise NotImplementedError
 
-    def analyze_step_performance_siso(self, input_data, expected_final_value):
+    def analyze_step_performance_siso(self, input_data, expected_final_value, start_time, end_time):
         assert(input_data.ndim == 1)
         assert(np.isscalar(expected_final_value))
+        assert(np.isscalar(start_time))
+        assert(np.isscalar(end_time))
 
         time_len = np.shape(input_data)
         input_mdt = numpy_matrix_to_matlab(input_data)
-        time_mdt = numpy_matrix_to_matlab(np.arange(time_len[0]))
+        time_mdt = numpy_matrix_to_matlab(np.linspace(start_time, end_time, time_len[0]))
         return self._matlab_engine.CalculateStepPerformance(input_mdt, time_mdt, expected_final_value)
 
     def TESTFUNC(self):

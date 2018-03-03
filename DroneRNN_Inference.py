@@ -51,18 +51,21 @@ if __name__ == "__main__":
         axis = data[0]
         sim_type = data[1]
         sim_len = int(data[2])
-        step_mag = float(data[3])
+        sim_dt = float(data[3])
+        sim_start_time = float(data[4])
+        sim_end_time = float(data[5])
+        step_mag = float(data[6])
 
-        kp_ang = float(data[4])
-        ki_ang = float(data[5])
-        kd_ang = float(data[6])
+        kp_ang = float(data[7])
+        ki_ang = float(data[8])
+        kd_ang = float(data[9])
 
-        kp_rat = float(data[7])
-        ki_rat = float(data[8])
-        kd_rat = float(data[9])
+        kp_rat = float(data[10])
+        ki_rat = float(data[11])
+        kd_rat = float(data[12])
 
         sys.set_pitch_ctrl_pid(kp_angle=kp_ang, ki_angle=ki_ang, kd_angle=kd_ang,
-                               kp_rate=kp_rat, ki_rate=ki_rat, kd_rate=kd_rat)
+                               kp_rate=0.9, ki_rate=4.0, kd_rate=0.05)
 
         # sys.set_pitch_ctrl_pid(kp_angle=2.5, ki_angle=3.0, kd_angle=0.01,
         #                        kp_rate=0.9, ki_rate=4.0, kd_rate=0.05)
@@ -81,10 +84,15 @@ if __name__ == "__main__":
         # -------------------------------
         # Execute the simulation
         # -------------------------------
+        # TODO: I think I may need to reset the model dynamics between each simulation.
+        # TODO: Print out the simulation parameters too, like num steps, and maybe a few performance specs
         euler_data, gyro_data, setpoint_data, motor_history = \
             sys.simulate_pitch_step(step_input_delta=step_mag, step_enable_t0=10, num_sim_steps=sim_len)
 
-        system_performance = sys.analyze_step_performance_siso(euler_data[0, :], 10.0)
+        system_performance = sys.analyze_step_performance_siso(input_data=euler_data[0, :],
+                                                               expected_final_value=step_mag,
+                                                               start_time=sim_start_time,
+                                                               end_time=sim_end_time)
 
         str_data = ','.join(map(str, system_performance.values())) + '\n'
         conn.send(str_data)

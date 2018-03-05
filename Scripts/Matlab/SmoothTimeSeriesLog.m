@@ -5,7 +5,6 @@ addpath(csvPath);
 
 inputLogFilename = 'timeSeriesDataInterpolated.csv';
 
-flightData = struct();
 header = {'rtosTick', 'pitch', 'roll', 'yaw',... 
           'ax','ay','az','gx','gy','gz','mx','my','mz',...
           'm1CMD', 'm2CMD', 'm3CMD', 'm4CMD',...
@@ -46,13 +45,10 @@ RSY_INDEX= 23;                      %Rate Setpoint Yaw
 motorMin = 1060;                    %ESC Idle Command
 motorMax = 1860;                    %ESC Max Throttle Command
 motorRange = motorMax-motorMin;     
-motorScaleFactor = 10;              %Range to scale to after normalization
 
 % Gyro Settings
-gyroMin = -2000; %dps
-gyroMax = 2000;
-gyroRange = gyroMax-gyroMin;
-gyroScaleFactor = 10;
+gyroMin = -250; %dps
+gyroMax = 250;
 
 %% Process Data
 rawData = csvread(inputLogFilename,1,0);
@@ -64,31 +60,31 @@ inference_smoothedData = [rawData(:,1), smoothdata(rawData(:,2:end))];
 % Normalize and scale the motor command data
 motor = rawData(:,M1_INDEX:M4_INDEX) - motorMin;
 motor(motor<0) = 0;
-motor = motorScaleFactor*(motor./motorRange);
+motor = motor./motorRange;
 
 % Normalize gyro over [-1,1] range and then scale
 gyro = rawData(:,GX_INDEX:GZ_INDEX) + gyroMax;
-gyro = gyroScaleFactor*((gyro./gyroMax)-1);
+gyro = (gyro./gyroMax)-1;
 
 % Recreate the data
-scaled_filteredData = [rawData(:,TICK_INDEX:AZ_INDEX), gyro,...
+norm_filteredData = [rawData(:,TICK_INDEX:AZ_INDEX), gyro,...
                        rawData(:,MX_INDEX:MZ_INDEX), motor,...
                        rawData(:,ASP_INDEX:end)];
    
-scaled_smoothedData = [scaled_filteredData(:,1), smoothdata(scaled_filteredData(:,2:end))];
+norm_smoothedData = [norm_filteredData(:,1), smoothdata(norm_filteredData(:,2:end))];
 
 % Write the data to file
 scaled_noisyPath = join([csvPath,'timeSeriesDataNoisy.csv']);
 fid = fopen(scaled_noisyPath, 'w');
 fprintf(fid, '%s\n', csvHeader);
 fclose(fid);
-dlmwrite(scaled_noisyPath, scaled_filteredData, '-append');
+dlmwrite(scaled_noisyPath, norm_filteredData, '-append');
 
 scaled_smoothPath = join([csvPath,'timeSeriesDataSmoothed.csv']);
 fid = fopen(scaled_smoothPath, 'w');
 fprintf(fid, '%s\n', csvHeader);
 fclose(fid);
-dlmwrite(scaled_smoothPath, scaled_smoothedData, '-append');
+dlmwrite(scaled_smoothPath, norm_smoothedData, '-append');
 
 inference_smoothPath = join([csvPath,'timeSeriesInferenceDataSmoothed.csv']);
 fid = fopen(inference_smoothPath, 'w');
@@ -98,22 +94,22 @@ dlmwrite(inference_smoothPath, inference_smoothedData, '-append');
 
 
 %% Plot if Desired
-if 0
+if 1
     %---------------------------------------------
     % Plot the AHRS Data
     %---------------------------------------------
     figure(1); clf(1);
     subplot(2,1,1); hold on; grid on;
-    plot(scaled_filteredData(:,PITCH_INDEX));
-    plot(scaled_filteredData(:,ROLL_INDEX));
+    plot(norm_filteredData(:,PITCH_INDEX));
+    plot(norm_filteredData(:,ROLL_INDEX));
     title('Noisy AHRS Data');
     xlabel('Samples');
     ylabel('Angle (deg)');
     legend('Pitch', 'Roll');
     
     subplot(2,1,2); hold on; grid on;
-    plot(scaled_smoothedData(:,PITCH_INDEX));
-    plot(scaled_smoothedData(:,ROLL_INDEX));
+    plot(norm_smoothedData(:,PITCH_INDEX));
+    plot(norm_smoothedData(:,ROLL_INDEX));
     title('Smoothed AHRS Data');
     xlabel('Samples');
     ylabel('Angle (deg)');
@@ -124,20 +120,20 @@ if 0
     %---------------------------------------------
     figure(2); clf(2); hold on;
     subplot(2,1,1); hold on; grid on;
-    plot(scaled_filteredData(:,M1_INDEX));
-    plot(scaled_filteredData(:,M2_INDEX));
-    plot(scaled_filteredData(:,M3_INDEX));
-    plot(scaled_filteredData(:,M4_INDEX)); 
+    plot(norm_filteredData(:,M1_INDEX));
+    plot(norm_filteredData(:,M2_INDEX));
+    plot(norm_filteredData(:,M3_INDEX));
+    plot(norm_filteredData(:,M4_INDEX)); 
     title('Noisy Motor Command Data');
     xlabel('Samples');
     ylabel('Scaled Command');
     legend('Motor1', 'Motor2', 'Motor3', 'Motor4');
     
     subplot(2,1,2); hold on; grid on;
-    plot(scaled_smoothedData(:,M1_INDEX));
-    plot(scaled_smoothedData(:,M2_INDEX));
-    plot(scaled_smoothedData(:,M3_INDEX));
-    plot(scaled_smoothedData(:,M4_INDEX)); 
+    plot(norm_smoothedData(:,M1_INDEX));
+    plot(norm_smoothedData(:,M2_INDEX));
+    plot(norm_smoothedData(:,M3_INDEX));
+    plot(norm_smoothedData(:,M4_INDEX)); 
     title('Smoothed Motor Command Data');
     xlabel('Samples');
     ylabel('Scaled Command');
@@ -148,18 +144,18 @@ if 0
     %---------------------------------------------
     figure(3); clf(3); hold on;
     subplot(2,1,1); hold on; grid on;
-    plot(scaled_filteredData(:,GX_INDEX));
-    plot(scaled_filteredData(:,GY_INDEX));
-    plot(scaled_filteredData(:,GZ_INDEX));
+    plot(norm_filteredData(:,GX_INDEX));
+    plot(norm_filteredData(:,GY_INDEX));
+    plot(norm_filteredData(:,GZ_INDEX));
     title('Noisy Gyro Data');
     xlabel('Samples');
     ylabel('Scaled Measurement');
     legend('GX', 'GY', 'GZ');
     
     subplot(2,1,2); hold on; grid on;
-    plot(scaled_smoothedData(:,GX_INDEX));
-    plot(scaled_smoothedData(:,GY_INDEX));
-    plot(scaled_smoothedData(:,GZ_INDEX));
+    plot(norm_smoothedData(:,GX_INDEX));
+    plot(norm_smoothedData(:,GY_INDEX));
+    plot(norm_smoothedData(:,GZ_INDEX));
     title('Smoothed Gyro Data');
     xlabel('Samples');
     ylabel('Scaled Measurement');

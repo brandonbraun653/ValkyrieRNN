@@ -1,2 +1,2 @@
-model_checkpoint_path: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\EulerModel\\euler_model.tfl.ckpt-2721"
-all_model_checkpoint_paths: "C:\\git\\Github\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\EulerModel\\euler_model.tfl.ckpt-2721"
+model_checkpoint_path: "C:\\git\\GitHub\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\EulerModel\\euler_model.tfl.ckpt-472"
+all_model_checkpoint_paths: "C:\\git\\GitHub\\ValkyrieRNN\\Checkpoints\\DroneRNN_Ver3\\EulerModel\\euler_model.tfl.ckpt-472"

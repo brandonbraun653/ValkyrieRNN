@@ -2,10 +2,12 @@
   <dictionary name="Valkyrie">
     <words>
       <w>ckpt</w>
+      <w>filenames</w>
       <w>matlab</w>
       <w>rtos</w>
       <w>setpoints</w>
       <w>siso</w>
+      <w>timeseries</w>
     </words>
   </dictionary>
 </component>

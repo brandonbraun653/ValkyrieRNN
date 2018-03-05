@@ -80,12 +80,12 @@ class DroneModel:
             self._euler_cfg = TFModels.ModelConfig()
             self._euler_cfg.load(euler_cfg_path)
 
-            self._euler_model = TFModels.drone_lstm_model(dim_in=self._euler_cfg.input_size,
-                                                          dim_out=self._euler_cfg.output_size,
-                                                          past_depth=self._euler_cfg.input_depth,
-                                                          layer_neurons=self._euler_cfg.neurons_per_layer,
-                                                          layer_dropout=self._euler_cfg.layer_dropout,
-                                                          learning_rate=self._euler_cfg.learning_rate)
+            self._euler_model = TFModels.drone_lstm_model_inv(dim_in=self._euler_cfg.input_size,
+                                                              dim_out=self._euler_cfg.output_size,
+                                                              past_depth=self._euler_cfg.input_depth,
+                                                              layer_neurons=self._euler_cfg.neurons_per_layer,
+                                                              layer_dropout=self._euler_cfg.layer_dropout,
+                                                              learning_rate=self._euler_cfg.learning_rate)
 
             self._euler_model.load(self._euler_chkpt_path)
             print("Loaded archived Euler model.")
@@ -98,12 +98,12 @@ class DroneModel:
             self._gyro_cfg = TFModels.ModelConfig()
             self._gyro_cfg.load(gyro_cfg_path)
 
-            self._gyro_model = TFModels.drone_lstm_model(dim_in=self._gyro_cfg.input_size,
-                                                         dim_out=self._gyro_cfg.output_size,
-                                                         past_depth=self._gyro_cfg.input_depth,
-                                                         layer_neurons=self._gyro_cfg.neurons_per_layer,
-                                                         layer_dropout=self._gyro_cfg.layer_dropout,
-                                                         learning_rate=self._gyro_cfg.learning_rate)
+            self._gyro_model = TFModels.drone_lstm_model_inv(dim_in=self._gyro_cfg.input_size,
+                                                             dim_out=self._gyro_cfg.output_size,
+                                                             past_depth=self._gyro_cfg.input_depth,
+                                                             layer_neurons=self._gyro_cfg.neurons_per_layer,
+                                                             layer_dropout=self._gyro_cfg.layer_dropout,
+                                                             learning_rate=self._gyro_cfg.learning_rate)
 
             self._gyro_model.load(self._gyro_chkpt_path)
             print("Loaded archived Gyro model.")

@@ -1,5 +1,5 @@
 
-from src.pid import PID
+from src.PIDController import PID
 
 
 class PIDInputs:

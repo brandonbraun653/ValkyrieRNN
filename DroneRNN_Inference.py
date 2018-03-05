@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from src.Inference import DroneModel
-from src.IPC import TCPSocket
+from src.InterProcessComm import TCPSocket
 from src.TensorFlowModels import ModelConfig
 
 import os
@@ -13,10 +13,15 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+import mmap
+import struct
+
 if __name__ == "__main__":
     HOST = '127.0.0.1'
     PORT = 50007
     conn = TCPSocket(host_ip=HOST, port_num=PORT)
+
+
 
     # -------------------------------
     # Load the model configuration files
@@ -39,10 +44,24 @@ if __name__ == "__main__":
 
     # Open up a port to let the GA code know we are ready
     conn.connect()
+    first_time = True
+
+    # Write some dummy data to the file
+    char_size = 1
+    shared_mem = mmap.mmap(0, (256 * 1024 * char_size), "Local\\PitchData")
+
+    if shared_mem:
+        print("Mem map creation successful...")
+
+    data = conn.receive(1024)
 
     while True:
-        data = conn.receive(1024)
+
+        if not first_time:
+            data = conn.receive(1024)
+
         data = [x.strip() for x in data.split(',')]
+        first_time = False
 
         if len(data) < 10:
             print("End of requests from GA")
@@ -80,6 +99,10 @@ if __name__ == "__main__":
         print("Kp =", pid_settings['angles'][0])
         print("Ki =", pid_settings['angles'][1])
         print("Kd =", pid_settings['angles'][2])
+        print("Sim Length = ", sim_len)
+        print("Start Time: ", sim_start_time)
+        print("End Time: ", sim_end_time)
+        print("dt: ", sim_dt)
 
         # -------------------------------
         # Execute the simulation
@@ -93,6 +116,19 @@ if __name__ == "__main__":
                                                                expected_final_value=step_mag,
                                                                start_time=sim_start_time,
                                                                end_time=sim_end_time)
+
+        if shared_mem:
+            # Go back to the beginning of the file
+            shared_mem.seek(0)
+
+            # Convert the float data to string with appended size at front
+            tx_data = euler_data[0, :]
+            sub_data = ','.join(map(str, tx_data))
+            tx_data = str(len(sub_data)) + ',' + sub_data + '\n'
+
+            print(tx_data[0:50])
+            shared_mem.write(bytes(tx_data, 'UTF-8'))
+            print("Done writing bytes to mem map")
 
         str_data = ','.join(map(str, system_performance.values())) + '\n'
         conn.send(str_data)

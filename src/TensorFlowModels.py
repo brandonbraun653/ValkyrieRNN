@@ -25,6 +25,7 @@ class ModelConfig:
         self._train_data_path_key = 'train_data_path'
         self._train_data_len_key = 'train_data_len'
         self._image_data_path_key = 'img_data_path'
+        self._data_inversion_key = 'data_inversion'
 
     def save(self, file_name):
         self._config_data.to_csv(file_name, sep=',', encoding='utf-8')
@@ -182,6 +183,14 @@ class ModelConfig:
     def image_data_path(self, value):
         self._config_data[self._image_data_path_key] = pd.Series([value])
 
+    @property
+    def data_inversion(self):
+        return self._config_data[self._data_inversion_key][0]
+
+    @data_inversion.setter
+    def data_inversion(self, value):
+        self._config_data[self._data_inversion_key] = pd.Series([value])
+
 
 def drone_rnn_model(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                     learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
@@ -252,6 +261,40 @@ def drone_lstm_model_deep(shape, dim_in, dim_out, past_depth, layer_neurons=128,
     layer6 = tflearn.fully_connected(layer5, n_units=dim_out)
 
     output_layer = tflearn.regression(layer6,
+                                      optimizer='adam',
+                                      loss='mean_square',
+                                      learning_rate=learning_rate)
+
+    return tflearn.DNN(output_layer,
+                       tensorboard_verbose=3,
+                       checkpoint_path=checkpoint_path,
+                       best_checkpoint_path=best_checkpoint_path)
+
+
+def drone_lstm_deeply_connected(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+                                learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
+    input_layer = tflearn.input_data(shape=shape)
+
+    layer1 = tflearn.lstm(input_layer,
+                          n_units=layer_neurons,
+                          return_seq=True,
+                          dropout=layer_dropout)
+
+    layer2 = tflearn.lstm(layer1,
+                          n_units=layer_neurons,
+                          return_seq=True,
+                          dropout=layer_dropout)
+
+    layer3 = tflearn.lstm(layer2,
+                          n_units=layer_neurons,
+                          return_seq=False,
+                          dropout=layer_dropout)
+
+    layer4 = tflearn.fully_connected(layer3, n_units=dim_out)
+
+    layer5 = tflearn.fully_connected(layer4, n_units=dim_out)
+
+    output_layer = tflearn.regression(layer5,
                                       optimizer='adam',
                                       loss='mean_square',
                                       learning_rate=learning_rate)

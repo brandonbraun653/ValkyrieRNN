@@ -58,9 +58,10 @@ motor(motor<0) = 0;
 motor = motor./motorRange;
 
 % Normalize gyro over [-1,1] range and then scale
-gyro = rawData(:,GX_INDEX:GZ_INDEX) + gyroMax;
-gyro = (gyro./gyroMax)-1;
+% gyro = rawData(:,GX_INDEX:GZ_INDEX) + gyroMax;
+% gyro = (gyro./gyroMax)-1;
 
+gyro = rawData(:,GX_INDEX:GZ_INDEX);
 dc_offset = mean(gyro);
 gyro = gyro - dc_offset;
 

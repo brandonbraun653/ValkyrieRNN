@@ -100,14 +100,13 @@ class AxisController:
         self.rateController.set_tunings(kp, ki, kd)
 
     def compute(self):
-        # The input to the angle controller should have already been updated
+        self.angleController.setpoint = self.angle_setpoint
         self.angleController.compute()
 
-        # Update the input of the rate controller with the output of the angle controller
-        self.rateController.setpoint = self.angular_rate_desired
+        # self.rateController.setpoint = self.angular_rate_desired
+        # self.rateController.compute()
 
-        # The output of the rate controller is automatically updated
-        self.rateController.compute()
+        self._motor_cmd_output = self.angular_rate_desired
 
 
 

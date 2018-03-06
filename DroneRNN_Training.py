@@ -51,7 +51,7 @@ if __name__ == "__main__":
     train_small_for_testing     = False
     invert_data_formatting      = True
     train_euler_model           = True
-    train_gyro_model            = True
+    train_gyro_model            = False
 
     max_cpu_cores = 16
     max_gpu_mem = 0.8
@@ -72,15 +72,15 @@ if __name__ == "__main__":
         # Generate the model configuration for a large training set
         cfg = TFModels.ModelConfig()
         cfg.model_name = 'euler_model.tfl'
-        cfg.model_type = 'lstm_inverted'
+        cfg.model_type = 'lstm_deeply_connected'
         cfg.input_size = 4
         cfg.input_depth = max_input_depth
         cfg.output_size = 2
         cfg.batch_len = 128
         cfg.epoch_len = 10
-        cfg.neurons_per_layer = 256
+        cfg.neurons_per_layer = 512
         cfg.learning_rate = 0.002
-        cfg.layer_dropout = (0.8, 0.8)
+        cfg.layer_dropout = (0.5, 0.5)
         cfg.train_data_len = 75 * 1000
         cfg.epoch_chkpt_path = big_data_path + 'Checkpoints/EulerModel/EpochResults/' + cfg.model_name + '.ckpt'
         cfg.best_chkpt_path = big_data_path + 'Checkpoints/EulerModel/BestResults/' + cfg.model_name + '.ckpt'
@@ -95,6 +95,11 @@ if __name__ == "__main__":
             cfg.best_chkpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/BestResult/' + cfg.model_name + '.ckpt'
             cfg.last_chkpt_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/SmallTesting/' + cfg.model_name + '.ckpt'
             cfg.image_data_path = 'Checkpoints/DroneRNN_Ver3/EulerModel/Images/'
+
+        if invert_data_formatting:
+            cfg.data_inversion = True
+        else:
+            cfg.data_inversion = False
 
         cfg.save('euler_model_cfg.csv')
 
@@ -113,7 +118,7 @@ if __name__ == "__main__":
                     model_input_shape = [None, cfg.input_depth, cfg.input_size]
 
                 # Create the basic model to train with iteratively
-                model = TFModels.drone_lstm_model_deep(shape=model_input_shape,
+                model = TFModels.drone_lstm_deeply_connected(shape=model_input_shape,
                                                        dim_in=cfg.input_size,
                                                        dim_out=cfg.output_size,
                                                        past_depth=cfg.input_depth,
@@ -248,15 +253,15 @@ if __name__ == "__main__":
         # Generate the model configuration for a large training set
         cfg = TFModels.ModelConfig()
         cfg.model_name = 'gyro_model.tfl'
-        cfg.model_type = 'lstm_inverted'
+        cfg.model_type = 'lstm_deeply_connected'
         cfg.input_size = 4
         cfg.input_depth = max_input_depth
         cfg.output_size = 2
         cfg.batch_len = 128
-        cfg.epoch_len = 10
-        cfg.neurons_per_layer = 256
+        cfg.epoch_len = 2
+        cfg.neurons_per_layer = 32
         cfg.learning_rate = 0.002
-        cfg.layer_dropout = (0.8, 0.8)
+        cfg.layer_dropout = (0.3, 0.3)
         cfg.train_data_len = 75 * 1000
         cfg.epoch_chkpt_path = big_data_path + 'Checkpoints/GyroModel/EpochResults/' + cfg.model_name + '.ckpt'
         cfg.best_chkpt_path  = big_data_path + 'Checkpoints/GyroModel/BestResults/' + cfg.model_name + '.ckpt'
@@ -271,6 +276,11 @@ if __name__ == "__main__":
             cfg.best_chkpt_path  = 'Checkpoints/DroneRNN_Ver3/GyroModel/BestResult/' + cfg.model_name + '.ckpt'
             cfg.last_chkpt_path  = 'Checkpoints/DroneRNN_Ver3/GyroModel/SmallTesting/' + cfg.model_name + '.ckpt'
             cfg.image_data_path  = 'Checkpoints/DroneRNN_Ver3/GyroModel/Images/'
+
+        if invert_data_formatting:
+            cfg.data_inversion = True
+        else:
+            cfg.data_inversion = False
 
         cfg.save('gyro_model_cfg.csv')
 
@@ -290,7 +300,7 @@ if __name__ == "__main__":
                     model_input_shape = [None, cfg.input_depth, cfg.input_size]
 
                 # Create the basic model to train with iteratively
-                model = TFModels.drone_lstm_model_deep(shape=model_input_shape,
+                model = TFModels.drone_lstm_deeply_connected(shape=model_input_shape,
                                                        dim_in=cfg.input_size,
                                                        dim_out=cfg.output_size,
                                                        past_depth=cfg.input_depth,

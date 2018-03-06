@@ -551,8 +551,8 @@ if __name__ == "__main__":
                             'stepping_15_deg_uncoupled/',
                             'disturbances/'])
 
-    parser.raw_data_2_csv()
-    parser.create_time_series_from_csv_logs()
+    # parser.raw_data_2_csv()
+    # parser.create_time_series_from_csv_logs()
 
     gyro_max = 250
     gyro_min = -250

@@ -13,7 +13,7 @@ matplotlib.use('Agg')   # use('Agg') for saving to file and use('TkAgg') for int
 import matplotlib.pyplot as plt
 
 
-class DataServer():
+class DataServer:
     """
     The purpose of this class is to produce training data for a model given
     an arbitrary naming convention.

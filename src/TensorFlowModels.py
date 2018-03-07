@@ -26,6 +26,11 @@ class ModelConfig:
         self._train_data_len_key = 'train_data_len'
         self._image_data_path_key = 'img_data_path'
         self._data_inversion_key = 'data_inversion'
+        self._variable_scope_key = 'var_scope'
+        self._max_cpu_cores_key = 'max_cpu_cores'
+        self._max_gpu_mem_key = 'max_gpu_mem'
+        self._training_device_key = 'train_dev_key'
+
 
     def save(self, file_name):
         self._config_data.to_csv(file_name, sep=',', encoding='utf-8')
@@ -50,6 +55,14 @@ class ModelConfig:
         if key not in self._config_data.keys():
             raise ValueError("Key doesn't exist?")
         return self._config_data[key][0]
+
+    @property
+    def training_device(self):
+        return self._config_data[self._training_device_key][0]
+
+    @training_device.setter
+    def training_device(self, value):
+        self._config_data[self._training_device_key] = pd.Series([value])
 
     @property
     def input_size(self):
@@ -190,6 +203,30 @@ class ModelConfig:
     @data_inversion.setter
     def data_inversion(self, value):
         self._config_data[self._data_inversion_key] = pd.Series([value])
+
+    @property
+    def variable_scope(self):
+        return self._config_data[self._variable_scope_key][0]
+
+    @variable_scope.setter
+    def variable_scope(self, value):
+        self._config_data[self._variable_scope_key] = pd.Series([value])
+
+    @property
+    def max_cpu_cores(self):
+        return self._config_data[self._max_cpu_cores_key][0]
+
+    @max_cpu_cores.setter
+    def max_cpu_cores(self, value):
+        self._config_data[self._max_cpu_cores_key] = pd.Series([value])
+
+    @property
+    def max_gpu_mem(self):
+        return self._config_data[self._max_gpu_mem_key][0]
+
+    @max_gpu_mem.setter
+    def max_gpu_mem(self, value):
+        self._config_data[self._max_gpu_mem_key] = pd.Series([value])
 
 
 def drone_rnn_model(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,

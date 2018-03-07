@@ -1,74 +1,25 @@
 from __future__ import division, print_function, absolute_import
 
+from shutil import copyfile
+from src.TensorFlowModels import ModelConfig
+from src.Miscellaneous import bcolors
 
 import os
+import glob
 import tflearn
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import src.TensorFlowModels as TFModels
 
-from src.TensorFlowModels import ModelConfig
-from src.Miscellaneous import bcolors
-
-
-class DataServer:
-    """
-    The purpose of this class is to produce training data for a model given
-    an arbitrary naming convention.
-    """
-    def __init__(self, path='', name_pattern='', file_ending=''):
-        self._file_index = 0
-        self._file_path = path
-        self._file_pattern = name_pattern
-        self._file_ending = file_ending
-
-        self.current_file_name = None
-
-    def reset_location(self):
-        self._file_index = 0
-
-    def get_next_dataset(self):
-        file = self._get_next_file()
-        self.current_file_name = file
-
-        try:
-            return pd.read_csv(file)
-
-        except:
-            print("Ran out of training data!")
-            return None
-
-    def _get_next_file(self):
-        next_file_name = self._file_path + self._file_pattern + str(self._file_index) + self._file_ending
-        self._file_index += 1
-
-        return next_file_name
+import matplotlib
+matplotlib.use('TkAgg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
+import matplotlib.pyplot as plt
 
 
 class ModelTrainer:
     def __init__(self, config_path=None,  training_data_path=None, validation_data_path=None,
-                 prediction_data_path=None, data_file_naming_pattern=None, results_path=None):
-
-        # --------------------------------------
-        # Directories
-        # --------------------------------------
-        self._results_root_path = results_path
-        self._training_results_path = results_path + 'training/'
-        self._validation_results_path = results_path + 'validation/'
-        self._prediction_results_path = results_path + 'prediction/'
-
-        self._train_data_path = training_data_path
-        self._validation_data_path = validation_data_path
-        self._prediction_data_path = prediction_data_path
-        self._data_file_naming_pattern = data_file_naming_pattern
-
-        # --------------------------------------
-        # Normal Variables
-        # --------------------------------------
-        self.training_loss = None
-        self.training_accuracy = None
-
+                 prediction_data_path=None, results_path=None):
         # --------------------------------------
         # Objects
         # --------------------------------------
@@ -76,68 +27,99 @@ class ModelTrainer:
         self.cfg.load(config_path)
 
         # --------------------------------------
+        # Directories
+        # --------------------------------------
+        self._input_config_path = config_path
+        self._results_root_path = results_path + self.cfg.model_name + '/'
+        self._output_config_path = self._results_root_path + 'config.csv'
+        self._log_directory = self._results_root_path + 'logs/'
+
+        # Output Training Directories
+        self._training_results_path = self._results_root_path     + 'training/'
+        self._epoch_checkpoint_path = self._training_results_path + 'epoch_results/'
+        self._best_checkpoint_path  = self._training_results_path + 'best_results/'
+        self._last_checkpoint_path  = self._training_results_path + 'last_results/'
+        self._training_images_path  = self._training_results_path + 'images/'
+
+        # Output Validation Directories
+        self._validation_results_path = self._results_root_path + 'validation/'
+
+        # Output Prediction Directories
+        self._prediction_results_path = self._results_root_path + 'prediction/'
+
+        # Input Directories
+        self._train_data_path = training_data_path
+        self._validation_data_path = validation_data_path
+        self._prediction_data_path = prediction_data_path
+
+        # --------------------------------------
+        # Normal Variables
+        # --------------------------------------
+        self.validation_accuracy = []
+        self.training_accuracy = []
+
+        self._model_files = {}
+
+        # --------------------------------------
         # Execute initialization functions
         # --------------------------------------
+        # NOTE: DO NOT CHANGE THIS ORDER
         self._init_directories()
+        self._init_model_data()
 
-    def train_from_scratch(self):
-        print(bcolors.OKBLUE + 'STARTING TRAINING OF ' + self.cfg.model_name + bcolors.ENDC)
+    def test_func(self):
+
+        in_keys = ['m1CMD', 'm2CMD', 'm3CMD', 'm4CMD']
+        out_keys = ['pitch', 'roll']
+
+        inputs, targets, num_samples = self._parse_input_data(self._model_files['training'][0], in_keys, out_keys)
+
+    def train_from_scratch(self, input_data_keys=None, output_data_keys=None):
+        # Sanity check that our input/output size do indeed match our config file
+        assert(len(input_data_keys) == self.cfg.input_size)
+        assert(len(output_data_keys) == self.cfg.output_size)
+
+        # Save so we know what data was used in the I/O modeling
+        self.cfg.input_keys = input_data_keys
+        self.cfg.output_keys = output_data_keys
+        self.cfg.save(self._output_config_path)
+
+        print(bcolors.OKBLUE + 'STARTING TRAINING OF: ' + self.cfg.model_name + bcolors.ENDC)
         tf.reset_default_graph()
-
         assert (isinstance(self.cfg.variable_scope, str))
-
-        # Ensure we don't get naming collisions between multiple models
         with tf.variable_scope(self.cfg.variable_scope):
-            assert (isinstance(self.cfg.max_cpu_cores, int))
-            assert (isinstance(self.cfg.max_gpu_mem, float))
+            assert (np.isscalar(self.cfg.max_cpu_cores))
+            assert (np.isscalar(self.cfg.max_gpu_mem))
             assert (isinstance(self.cfg.training_device, str))
 
             tflearn.init_graph(num_cores=self.cfg.max_cpu_cores, gpu_memory_fraction=self.cfg.max_gpu_mem)
             with tf.device(self.cfg.training_device):
 
-                # File generator objects to load data sets on command
-                train_gen = DataServer(path=self._train_data_path,
-                                       name_pattern=self._data_file_naming_pattern,
-                                       file_ending='.csv')
-
-                validate_gen = DataServer(path=self._validation_data_path,
-                                          name_pattern=self._data_file_naming_pattern,
-                                          file_ending='.csv')
-
-                # Model used for training
                 model = self._generate_training_model()
 
-                # Loop through all the data in the training folder
-                file_count = -1
-                while True:
-                    file_count += 1
+                # Pre-load the validation data to reduce runtime
+                v_inputs, v_targets = self._generate_validation_data(self._model_files['validation'][0])
 
-                    time_series = train_gen.get_next_dataset()
-                    if time_series is None:
-                        break
+                for training_file in self._model_files['training']:
+                    print(bcolors.OKGREEN + 'TRAINING WITH FILE: ' + training_file + bcolors.ENDC)
 
-                    print(bcolors.OKGREEN + "TRAINING WITH FILE: ", train_gen.current_file_name + bcolors.ENDC)
-                    inputs, targets, num_samples = self._parse_input_data(data_set=time_series)
+                    # Grab the full set of input data
+                    inputs, targets, num_samples = self._parse_input_data(filename=training_file,
+                                                                          input_keys=input_data_keys,
+                                                                          output_keys=output_data_keys)
 
-                    # -------------------------------------------
-                    # Train with the full dataset being broken up into
-                    # multiple parts to handle RAM overload
-                    # -------------------------------------------
-                    train_data_idx = 0
+                    # Split the data into parts for training so that we don't exhaust RAM resources
+                    # All the data is pre-generated to save training time
                     total_train_iterations = int(np.ceil(num_samples / self.cfg.train_data_len))
+                    model_inputs, model_targets = self._generate_training_data(input_full=inputs,
+                                                                               output_full=targets,
+                                                                               num_iter=total_train_iterations,
+                                                                               total_samples=num_samples)
+
+                    # Run through all the data, logging some metrics along the way
                     for train_iteration in range(0, total_train_iterations):
-
-                        # Generate the training data for this iteration
-                        model_inputs, model_targets = self._generate_training_data(input_full=inputs,
-                                                                                   output_full=targets,
-                                                                                   current_train_idx=train_data_idx,
-                                                                                   total_samples=num_samples)
-                        # TODO: Can I increment this inside ^^^ function?
-                        train_data_idx += self.cfg.train_data_len
-
-                        # Train with the current data set
-                        model.fit(X_inputs=model_inputs,
-                                  Y_targets=model_targets,
+                        model.fit(X_inputs=model_inputs[train_iteration],
+                                  Y_targets=model_targets[train_iteration],
                                   n_epoch=self.cfg.epoch_len,
                                   validation_set=0.25,
                                   batch_size=self.cfg.batch_len,
@@ -145,32 +127,71 @@ class ModelTrainer:
                                   snapshot_epoch=True,
                                   run_id=self.cfg.model_name)
 
-                        # ---------------------------------------
                         # Generate validation scores for training round
-                        # ---------------------------------------
-                        validation_file = self._validation_data_path + 'validation_set.csv'
-                        v_inputs, v_targets = self._generate_validation_data(validation_file)
-                        scores = model.evaluate(X=v_inputs, Y=v_targets, batch_size=self.cfg.batch_len)
+                        self.validation_accuracy.append(model.evaluate(X=v_inputs,
+                                                                       Y=v_targets,
+                                                                       batch_size=self.cfg.batch_len)[0])
 
-                        # TODO: Do something with the scores, like logging
-                        print(scores)
+                        self.training_accuracy.append(model.evaluate(X=model_inputs[train_iteration],
+                                                                     Y=model_targets[train_iteration],
+                                                                     batch_size=self.cfg.batch_len)[0])
 
-                        get this running first before continuing!!
+                print(self.validation_accuracy)
+                print(self.training_accuracy)
+
+                # Print a graph for the user to see training/validation accuracies
+                plt.figure(figsize=(16, 4))
+                plt.suptitle('Training vs Validation Accuracy')
+                plt.plot(np.array(self.validation_accuracy), 'b-', label='Validation')
+                plt.plot(np.array(self.training_accuracy), 'g-', label='Training')
+                plt.legend()
+                plt.show()
+
+
 
 
     def _init_directories(self):
-        # Ensure the root results directory exists
-        if not os.path.exists(self._results_root_path):
-            os.makedirs(self._results_root_path)
+        """
+        If a directory doesn't exist, create it. Otherwise, empty it of all files (not folders)
+        :return:
+        """
+        def init_dir(path, clean=True):
+            if not os.path.exists(path):
+                os.makedirs(path)
+            elif clean:
+                files = glob.glob(path + '*')
+                for f in files:
+                    if not os.path.isdir(f):
+                        os.remove(f)
 
-        if not os.path.exists(self._training_results_path):
-            os.makedirs(self._training_results_path)
+        init_dir(self._results_root_path)
+        init_dir(self._training_results_path)
+        init_dir(self._validation_results_path)
+        init_dir(self._prediction_results_path)
+        init_dir(self._epoch_checkpoint_path)
+        init_dir(self._best_checkpoint_path)
+        init_dir(self._last_checkpoint_path)
+        init_dir(self._training_images_path)
+        init_dir(self._log_directory)
 
-        if not os.path.exists(self._validation_results_path):
-            os.makedirs(self._validation_results_path)
+    def _init_model_data(self):
+        # Grab all the files available in the training, validation, and prediction paths
+        self._model_files['training']   = glob.glob(self._train_data_path + '*.csv')
+        self._model_files['validation'] = glob.glob(self._validation_data_path + '*.csv')
+        self._model_files['prediction'] = glob.glob(self._prediction_data_path + '*.csv')
 
-        if not os.path.exists(self._prediction_results_path):
-            os.makedirs(self._prediction_results_path)
+        # Copy over the configuration file for later use
+        copyfile(self._input_config_path, self._output_config_path)
+
+        # Update the model logging paths, overwriting whatever the user had
+        self.cfg.load(self._output_config_path)
+
+        self.cfg.epoch_chkpt_path = self._epoch_checkpoint_path + self.cfg.model_name
+        self.cfg.best_chkpt_path = self._best_checkpoint_path + self.cfg.model_name
+        self.cfg.last_chkpt_path = self._last_checkpoint_path + self.cfg.model_name
+        self.cfg.image_data_path = self._training_images_path + self.cfg.model_name
+
+        self.cfg.save(self._output_config_path)
 
     def _generate_training_model(self):
         """
@@ -203,61 +224,90 @@ class ModelTrainer:
                           layer_dropout=self.cfg.layer_dropout,
                           learning_rate=self.cfg.learning_rate,
                           checkpoint_path=self.cfg.epoch_chkpt_path,
-                          best_checkpoint_path=self.cfg.best_chkpt_path)
+                          best_checkpoint_path=self.cfg.best_chkpt_path,
+                          log_dir=self._log_directory)
 
-    def _generate_training_data(self, input_full, output_full, current_train_idx, total_samples):
-        # Grab a full set of data if we have enough left
-        if (current_train_idx + self.cfg.train_data_len) < total_samples:
-            train_x, train_y = self._fill_data(raw_inputs=input_full,
-                                               raw_targets=output_full,
-                                               start_idx=current_train_idx,
-                                               end_idx=current_train_idx+self.cfg.train_data_len)
+    def _generate_training_data(self, input_full, output_full, num_iter, total_samples):
+        output_x = [[] for i in range(num_iter)]
+        output_y = [[] for i in range(num_iter)]
+        current_train_idx = 0
 
-        # Otherwise, only get remaining data
-        else:
-            train_x, train_y = self._fill_data(raw_inputs=input_full,
-                                               raw_targets=output_full,
-                                               start_idx=current_train_idx,
-                                               end_idx=(total_samples - current_train_idx - self.cfg.input_depth))
+        for iteration in range(0, num_iter):
+            # Grab a full set of data if we have enough left
+            if (current_train_idx + self.cfg.train_data_len) < total_samples:
+                train_x, train_y = self._fill_data(raw_inputs=input_full,
+                                                   raw_targets=output_full,
+                                                   start_idx=current_train_idx,
+                                                   end_idx=current_train_idx+self.cfg.train_data_len)
 
-        # Return the data in the correct format for direct input into the network
-        return self._reshape_data(train_x, train_y)
+            # Otherwise, only get remaining data
+            else:
+                train_x, train_y = self._fill_data(raw_inputs=input_full,
+                                                   raw_targets=output_full,
+                                                   start_idx=current_train_idx,
+                                                   end_idx=(total_samples - current_train_idx - self.cfg.input_depth))
+
+            # Return the data in the correct format for direct input into the network
+            output_x[iteration], output_y[iteration] = self._reshape_data(train_x, train_y)
+
+            current_train_idx += self.cfg.train_data_len
+
+        return output_x, output_y
 
     def _generate_validation_data(self, filename):
         try:
-            input_full, output_full, num_samples = self._parse_input_data(pd.read_csv(filename))
+            input_full, output_full, num_samples = self._parse_input_data(filename=filename,
+                                                                          input_keys=self.cfg.input_keys,
+                                                                          output_keys=self.cfg.output_keys)
         except:
-            print("Validation file doesn't exist!")
-            return None
+            print(bcolors.WARNING + 'Validation file doesn\'t exist!' + bcolors.ENDC)
+            return None, None
 
-        train_x, train_y = self._fill_data(input_full, output_full, 0, num_samples)
-        train_x, train_y = self._reshape_data(train_x, train_y)
+        validation_x, validation_y = self._fill_data(input_full, output_full, 0, num_samples)
+        validation_x, validation_y = self._reshape_data(validation_x, validation_y)
 
-        return train_x, train_y
+        return validation_x, validation_y
 
-    def _parse_input_data(self, data_set):
+    def _parse_input_data(self, filename, input_keys, output_keys):
+        # --------------------------------------
+        # Attempt to read all the input data requested
+        # --------------------------------------
+        try:
+            data_set = pd.read_csv(filename)
+        except:
+            raise ValueError(bcolors.FAIL + 'Could not open file: ' + filename + bcolors.ENDC)
+
+        try:
+            data = []
+            for key in input_keys:
+                value = data_set[key]
+                data.append(value)
+
+            input_full = np.array(data)
+        except:
+            raise ValueError(bcolors.FAIL + 'Key does not exist in input dataset!' + bcolors.ENDC)
+
+        try:
+            data = []
+            for key in output_keys:
+                value = data_set[key]
+                data.append(value)
+
+            output_full = np.array(data)
+        except:
+            raise ValueError(bcolors.FAIL + 'Key does not exist in dataset!' + bcolors.ENDC)
+
+        # --------------------------------------
+        # Reformat for later processing
+        # --------------------------------------
+        # Ensures data is in row-wise format [vars x samples]
         if self.cfg.data_inversion:
-            # Ensures data is in row-wise format [vars x samples]
-            input_full = np.array([data_set['m1CMD'],
-                                   data_set['m2CMD'],
-                                   data_set['m3CMD'],
-                                   data_set['m4CMD']])
-
-            output_full = np.array([data_set['pitch'],
-                                    data_set['roll']])
-
             num_samples = np.shape(input_full)[1]
 
+        # Ensures data is in column-wise format [samples x vars]
         else:
-            # Ensures data is in column-wise format [samples x vars]
-            input_full = np.array([data_set['m1CMD'],
-                                   data_set['m2CMD'],
-                                   data_set['m3CMD'],
-                                   data_set['m4CMD']]).transpose()
-
-            output_full = np.array([data_set['pitch'],
-                                    data_set['roll']]).transpose()
-
+            input_full = input_full.transpose()
+            output_full = output_full.transpose()
             num_samples = np.shape(input_full)[0]
 
         return input_full, output_full, num_samples
@@ -294,14 +344,15 @@ class ModelTrainer:
         inputs = []
         targets = []
 
-        for i in range(start_idx, end_idx):
-            # Data should be formatted row-wise [vars x samples]
-            if self.cfg.data_inversion:
+        # Data should be formatted row-wise [vars x samples]
+        if self.cfg.data_inversion:
+            for i in range(start_idx, end_idx-self.cfg.input_depth):
                 inputs.append(raw_inputs[0:self.cfg.input_size, i:i + self.cfg.input_depth])
                 targets.append(raw_targets[0:self.cfg.output_size, i + self.cfg.input_depth])
 
-            # Data should be formatted column-wise [samples x vars]
-            else:
+        # Data should be formatted column-wise [samples x vars]
+        else:
+            for i in range(start_idx, end_idx-self.cfg.input_depth):
                 inputs.append(raw_inputs[i:i + self.cfg.input_depth, 0:self.cfg.input_size])
                 targets.append(raw_targets[i + self.cfg.input_depth, 0:self.cfg.output_size])
 

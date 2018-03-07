@@ -30,6 +30,8 @@ class ModelConfig:
         self._max_cpu_cores_key = 'max_cpu_cores'
         self._max_gpu_mem_key = 'max_gpu_mem'
         self._training_device_key = 'train_dev_key'
+        self._input_data_key = 'input_key'
+        self._output_data_key = 'output_key'
 
 
     def save(self, file_name):
@@ -55,6 +57,22 @@ class ModelConfig:
         if key not in self._config_data.keys():
             raise ValueError("Key doesn't exist?")
         return self._config_data[key][0]
+
+    @property
+    def input_keys(self):
+        return self._config_data[self._input_data_key][0]
+
+    @input_keys.setter
+    def input_keys(self, value):
+        self._config_data[self._input_data_key] = pd.Series([value])
+
+    @property
+    def output_keys(self):
+        return self._config_data[self._output_data_key][0]
+
+    @output_keys.setter
+    def output_keys(self, value):
+        self._config_data[self._output_data_key] = pd.Series([value])
 
     @property
     def training_device(self):
@@ -230,7 +248,8 @@ class ModelConfig:
 
 
 def drone_rnn_model(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
-                    learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
+                    learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                    log_dir='/tmp/tflearn_logs/'):
     input_layer = tflearn.input_data(shape=shape)
 
     layer1 = tflearn.simple_rnn(input_layer,
@@ -263,11 +282,13 @@ def drone_rnn_model(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer
     return tflearn.DNN(output_layer,
                        tensorboard_verbose=3,
                        checkpoint_path=checkpoint_path,
-                       best_checkpoint_path=best_checkpoint_path)
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
 
 
 def drone_lstm_model_deep(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
-                          learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
+                          learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                          log_dir='/tmp/tflearn_logs/'):
     input_layer = tflearn.input_data(shape=shape)
 
     layer1 = tflearn.lstm(input_layer,
@@ -305,11 +326,13 @@ def drone_lstm_model_deep(shape, dim_in, dim_out, past_depth, layer_neurons=128,
     return tflearn.DNN(output_layer,
                        tensorboard_verbose=3,
                        checkpoint_path=checkpoint_path,
-                       best_checkpoint_path=best_checkpoint_path)
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
 
 
 def drone_lstm_deeply_connected(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
-                                learning_rate=0.001, checkpoint_path='', best_checkpoint_path=''):
+                                learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                                log_dir='/tmp/tflearn_logs/'):
     input_layer = tflearn.input_data(shape=shape)
 
     layer1 = tflearn.lstm(input_layer,
@@ -339,7 +362,8 @@ def drone_lstm_deeply_connected(shape, dim_in, dim_out, past_depth, layer_neuron
     return tflearn.DNN(output_layer,
                        tensorboard_verbose=3,
                        checkpoint_path=checkpoint_path,
-                       best_checkpoint_path=best_checkpoint_path)
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
 
 
 if __name__ == '__main__':

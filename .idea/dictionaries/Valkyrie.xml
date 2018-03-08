@@ -2,11 +2,15 @@
   <dictionary name="Valkyrie">
     <words>
       <w>ckpt</w>
+      <w>crossentropy</w>
       <w>filenames</w>
       <w>matlab</w>
+      <w>pred</w>
       <w>rtos</w>
       <w>setpoints</w>
       <w>siso</w>
+      <w>tanh</w>
+      <w>tensorboard</w>
       <w>timeseries</w>
     </words>
   </dictionary>

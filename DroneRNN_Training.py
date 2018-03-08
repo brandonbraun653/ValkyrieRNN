@@ -1,51 +1,49 @@
 from __future__ import division, print_function, absolute_import
 
 import src.TensorFlowModels as TFModels
-
 import tflearn
 import tensorflow as tf
-from Scripts import RawData2CSV as DataParser
 from src.Training import ModelTrainer
 from src.Miscellaneous import bcolors
 import numpy as np
 import pandas as pd
-# import matplotlib
-# matplotlib.use('Agg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
-# import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
+import matplotlib.pyplot as plt
 
 
-class DataServer:
-    """
-    The purpose of this class is to produce training data for a model given
-    an arbitrary naming convention.
-    """
-    def __init__(self, path='', name_pattern='', file_ending=''):
-        self._file_index = 0
-        self._file_path = path
-        self._file_pattern = name_pattern
-        self._file_ending = file_ending
+def train_plot_callback(train_act, train_pred):
+    lw = 0.8
+    plt.figure(figsize=(32, 18))
+    plt.suptitle('Training Data Predictions')
 
-        self.current_file_name = None
+    plt.subplot(2, 1, 1)
+    plt.plot(train_act[:, 0], 'g--', label='Pitch Actual', linewidth=lw)
+    plt.plot(train_pred[:, 0], 'r-', label='Pitch Model', linewidth=2 * lw)
 
-    def reset_location(self):
-        self._file_index = 0
+    plt.legend()
 
-    def get_next_dataset(self):
-        file = self._get_next_file()
-        self.current_file_name = file
+    plt.subplot(2, 1, 2)
+    plt.plot(train_act[:, 1], 'b--', label='Roll Actual', linewidth=lw)
+    plt.plot(train_pred[:, 1], 'm-', label='Roll Model', linewidth=2 * lw)
 
-        try:
-            return pd.read_csv(file)
+    plt.legend()
 
-        except:
-            print("Ran out of training data!")
-            return None
 
-    def _get_next_file(self):
-        next_file_name = self._file_path + self._file_pattern + str(self._file_index) + self._file_ending
-        self._file_index += 1
+def validate_plot_callback(valid_act, valid_pred):
+    lw = 0.8
+    plt.figure(figsize=(32, 18))
+    plt.suptitle('Validation Data Predictions')
 
-        return next_file_name
+    plt.subplot(2, 1, 1)
+    plt.plot(valid_act[:, 0], 'g--', label='Pitch Actual', linewidth=lw)
+    plt.plot(valid_pred[:, 0], 'r-', label='Pitch Model', linewidth=2*lw)
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    plt.plot(valid_act[:, 1], 'b--', label='Roll Actual', linewidth=lw)
+    plt.plot(valid_pred[:, 1], 'm-', label='Roll Model', linewidth=2*lw)
+    plt.legend()
 
 
 if __name__ == "__main__":
@@ -76,20 +74,20 @@ if __name__ == "__main__":
     # Generate the model configuration for a large training set
     cfg = TFModels.ModelConfig()
     cfg.model_name = 'euler_model'
-    cfg.model_type = 'drone_lstm_deeply_connected'
+    cfg.model_type = 'drone_lstm_model_deep'
     cfg.input_size = 4
-    cfg.input_depth = 1250
+    cfg.input_depth = 250
     cfg.output_size = 2
     cfg.batch_len = 128
-    cfg.epoch_len = 10
-    cfg.neurons_per_layer = 32
+    cfg.epoch_len = 5
+    cfg.neurons_per_layer = 128
     cfg.learning_rate = 0.002
-    cfg.layer_dropout = (0.5, 0.5)
-    cfg.train_data_len = 75 * 1000
+    cfg.layer_dropout = (0.6, 0.6)
+    cfg.train_data_len = 25 * 1000
     cfg.data_inversion = True
 
     cfg.max_cpu_cores = 16
-    cfg.max_gpu_mem = 0.8
+    cfg.max_gpu_mem = 0.6
     cfg.variable_scope = 'euler'
     cfg.training_device = '/gpu:0'
 
@@ -104,8 +102,9 @@ if __name__ == "__main__":
     in_keys = ['m1CMD', 'm2CMD', 'm3CMD', 'm4CMD']
     out_keys = ['pitch', 'roll']
 
-    temp.train_from_scratch(input_data_keys=in_keys, output_data_keys=out_keys)
-
+    temp.train_from_scratch(input_data_keys=in_keys, output_data_keys=out_keys,
+                            training_plot_callback=train_plot_callback,
+                            validation_plot_callback=validate_plot_callback)
 
     # ---------------------------------------
     # Train the Euler Prediction Network

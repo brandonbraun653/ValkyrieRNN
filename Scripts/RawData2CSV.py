@@ -537,22 +537,23 @@ class DataConverter:
 
 if __name__ == "__main__":
 
-    parser = DataConverter(base_path='G:/Projects/ValkyrieRNN/TrainingData/',
-                           raw_path='G:/Projects/ValkyrieRNN/TrainingData/raw/',
-                           csv_path='G:/Projects/ValkyrieRNN/TrainingData/csv/',
+    parser = DataConverter(base_path='G:/Projects/ValkyrieRNN/Data/',
+                           raw_path='G:/Projects/ValkyrieRNN/Data/raw/',
+                           csv_path='G:/Projects/ValkyrieRNN/Data/csv/',
                            matlab_path=r'C:/git/GitHub/ValkyrieRNN/Scripts/Matlab/')
 
     parser.add_dat_filenames(['ahrsLogFull.dat', 'angleSetpoints.dat', 'motorLog.dat', 'rateSetpoints.dat'])
-    parser.add_dat_folders(['stepping_5_deg_coupled/',
-                            'stepping_5_deg_uncoupled/',
-                            'stepping_10_deg_coupled/',
-                            'stepping_10_deg_uncoupled/',
-                            'stepping_15_deg_coupled/',
-                            'stepping_15_deg_uncoupled/',
-                            'disturbances/'])
+    # parser.add_dat_folders(['stepping_5_deg_coupled/',
+    #                         'stepping_5_deg_uncoupled/',
+    #                         'stepping_10_deg_coupled/',
+    #                         'stepping_10_deg_uncoupled/',
+    #                         'stepping_15_deg_coupled/',
+    #                         'stepping_15_deg_uncoupled/',
+    #                         'disturbances/'])
 
-    # parser.raw_data_2_csv()
-    # parser.create_time_series_from_csv_logs()
+    parser.add_dat_folders(['general_dump/'])
+    parser.raw_data_2_csv()
+    parser.create_time_series_from_csv_logs()
 
     gyro_max = 250
     gyro_min = -250

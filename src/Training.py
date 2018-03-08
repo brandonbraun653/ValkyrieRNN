@@ -13,7 +13,7 @@ import tensorflow as tf
 import src.TensorFlowModels as TFModels
 
 import matplotlib
-matplotlib.use('TkAgg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
+matplotlib.use('Agg')   # use('Agg') for saving to file and use('TkAgg') for interactive plot
 import matplotlib.pyplot as plt
 
 
@@ -74,7 +74,8 @@ class ModelTrainer:
 
         inputs, targets, num_samples = self._parse_input_data(self._model_files['training'][0], in_keys, out_keys)
 
-    def train_from_scratch(self, input_data_keys=None, output_data_keys=None):
+    def train_from_scratch(self, input_data_keys=None, output_data_keys=None,
+                           training_plot_callback=None, validation_plot_callback=None):
         # Sanity check that our input/output size do indeed match our config file
         assert(len(input_data_keys) == self.cfg.input_size)
         assert(len(output_data_keys) == self.cfg.output_size)
@@ -97,9 +98,10 @@ class ModelTrainer:
 
                 model = self._generate_training_model()
 
-                # Pre-load the validation data to reduce runtime
-                v_inputs, v_targets = self._generate_validation_data(self._model_files['validation'][0])
-
+                # ---------------------------------------
+                # Train on each file present in training folder
+                # ---------------------------------------
+                file_iteration = 0
                 for training_file in self._model_files['training']:
                     print(bcolors.OKGREEN + 'TRAINING WITH FILE: ' + training_file + bcolors.ENDC)
 
@@ -111,18 +113,25 @@ class ModelTrainer:
                     # Split the data into parts for training so that we don't exhaust RAM resources
                     # All the data is pre-generated to save training time
                     total_train_iterations = int(np.ceil(num_samples / self.cfg.train_data_len))
-                    model_inputs, model_targets = self._generate_training_data(input_full=inputs,
-                                                                               output_full=targets,
-                                                                               num_iter=total_train_iterations,
-                                                                               total_samples=num_samples)
+                    t_inputs, t_targets = self._generate_training_data(input_full=inputs,
+                                                                       output_full=targets,
+                                                                       num_iter=total_train_iterations,
+                                                                       total_samples=num_samples)
 
-                    # Run through all the data, logging some metrics along the way
+                    # Pre-load random validation data to reduce runtime
+                    file_num = np.random.randint(len(self._model_files['validation']))
+                    v_inputs, v_targets = self._generate_validation_data(self._model_files['validation'][file_num])
+
+                    # ---------------------------------------
+                    # Fit on each data set
+                    # ---------------------------------------
                     for train_iteration in range(0, total_train_iterations):
-                        model.fit(X_inputs=model_inputs[train_iteration],
-                                  Y_targets=model_targets[train_iteration],
+                        model.fit(X_inputs=t_inputs[train_iteration],
+                                  Y_targets=t_targets[train_iteration],
                                   n_epoch=self.cfg.epoch_len,
-                                  validation_set=0.25,
                                   batch_size=self.cfg.batch_len,
+                                  validation_batch_size=self.cfg.batch_len,
+                                  validation_set=(v_inputs, v_targets),
                                   show_metric=True,
                                   snapshot_epoch=True,
                                   run_id=self.cfg.model_name)
@@ -132,23 +141,41 @@ class ModelTrainer:
                                                                        Y=v_targets,
                                                                        batch_size=self.cfg.batch_len)[0])
 
-                        self.training_accuracy.append(model.evaluate(X=model_inputs[train_iteration],
-                                                                     Y=model_targets[train_iteration],
+                        self.training_accuracy.append(model.evaluate(X=t_inputs[train_iteration],
+                                                                     Y=t_targets[train_iteration],
                                                                      batch_size=self.cfg.batch_len)[0])
 
-                print(self.validation_accuracy)
-                print(self.training_accuracy)
+                        # Generate prediction data
+                        t_predict = model.predict(t_inputs[train_iteration])
+                        v_predict = model.predict(v_inputs)
 
-                # Print a graph for the user to see training/validation accuracies
+                        # Plot training results
+                        if callable(training_plot_callback):
+                            training_plot_callback(t_targets[train_iteration], t_predict)
+
+                            img_name = 'f' + str(file_iteration) + '_iter' + str(train_iteration) + '_train.pdf'
+                            plt.savefig(self._training_images_path + img_name, format='pdf', dpi=600)
+
+                        if callable(validation_plot_callback):
+                            validation_plot_callback(v_targets, v_predict)
+
+                            img_name = 'f' + str(file_iteration) + '_iter' + str(train_iteration) + '_validate.pdf'
+                            plt.savefig(self._training_images_path + img_name, format='pdf', dpi=600)
+
+                    # ---------------------------------------
+                    # Post processing/updating variables
+                    # ---------------------------------------
+                    file_iteration += 1
+
+                # ---------------------------------------
+                # Print validation accuracies
+                # ---------------------------------------
                 plt.figure(figsize=(16, 4))
                 plt.suptitle('Training vs Validation Accuracy')
                 plt.plot(np.array(self.validation_accuracy), 'b-', label='Validation')
                 plt.plot(np.array(self.training_accuracy), 'g-', label='Training')
                 plt.legend()
-                plt.show()
-
-
-
+                plt.savefig(self._training_images_path + 'accuracyPlot.png')
 
     def _init_directories(self):
         """
@@ -172,7 +199,7 @@ class ModelTrainer:
         init_dir(self._best_checkpoint_path)
         init_dir(self._last_checkpoint_path)
         init_dir(self._training_images_path)
-        init_dir(self._log_directory)
+        init_dir(self._log_directory + self.cfg.model_name + '/')   # Tensorboard logs like this for some reason
 
     def _init_model_data(self):
         # Grab all the files available in the training, validation, and prediction paths
@@ -212,6 +239,8 @@ class ModelTrainer:
             model_func = TFModels.drone_lstm_model_deep
         elif self.cfg.model_type == 'drone_lstm_deeply_connected':
             model_func = TFModels.drone_lstm_deeply_connected
+        elif self.cfg.model_type == 'drone_lstm_sandbox1':
+            model_func = TFModels.drone_lstm_sandbox1
         else:
             raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
 

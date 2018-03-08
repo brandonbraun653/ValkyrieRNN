@@ -366,21 +366,44 @@ def drone_lstm_deeply_connected(shape, dim_in, dim_out, past_depth, layer_neuron
                        tensorboard_dir=log_dir)
 
 
+def drone_lstm_sandbox1(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+                        learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                        log_dir='/tmp/tflearn_logs/'):
+    input_layer = tflearn.input_data(shape=shape,
+                                     data_preprocessing=None,
+                                     name='InputData')
+
+    layer1 = tflearn.lstm(incoming=input_layer, n_units=layer_neurons, return_seq=True, dropout=layer_dropout,
+                          activation='tanh',
+                          inner_activation='sigmoid',
+                          weights_init='uniform',
+                          name='LSTM_Layer1')
+
+    layer2 = tflearn.lstm(incoming=layer1, n_units=layer_neurons, return_seq=False, dropout=layer_dropout,
+                          activation='tanh',
+                          inner_activation='sigmoid',
+                          weights_init='uniform',
+                          name='LSTM_Layer2')
+
+    layer3 = tflearn.fully_connected(incoming=layer2, n_units=layer_neurons, activation='tanh')
+    layer4 = tflearn.fully_connected(incoming=layer3, n_units=dim_out, activation='linear')
+
+    output_layer = tflearn.regression(layer4, optimizer='adam', loss='categorical_crossentropy',
+                                      learning_rate=learning_rate)
+
+    return tflearn.DNN(network=output_layer,
+                       tensorboard_verbose=3,
+                       checkpoint_path=checkpoint_path,
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
+
+
+def drone_gru_sandbox1(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+                       learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                       log_dir='/tmp/tflearn_logs/'):
+    input_layer = tflearn.input_data(shape=shape,
+                                     data_preprocessing=None,
+                                     name='InputData')
+
 if __name__ == '__main__':
-    dat = ModelConfig()
-
-    filename = "test.csv"
-
-    dat.append_new_column('output_size', 3)
-    dat.append_new_column('path', 'hello.csv')
-    dat.input_size = 33
-
-    dat.save(filename)
-
-    dat.load(filename)
-
-    x = dat.input_size
-    y = dat.read_column('output_size')
-
-    print(dat.input_size)
-    print(dat.read_column('output_size')[0])
+    pass

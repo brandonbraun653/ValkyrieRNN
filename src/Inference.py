@@ -39,6 +39,11 @@ class StepResponseMetrics:
         self.steady_state_error = 0
 
 
+class ModelInferencer:
+    def __init__(self):
+        pass
+
+
 class DroneModel:
     def __init__(self, euler_cfg_path='', gyro_cfg_path=''):
         self._euler_cfg_path = euler_cfg_path

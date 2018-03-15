@@ -46,12 +46,12 @@ trainY = np.array(next_val)
 net = tflearn.input_data(shape=[None, steps_of_history, 1])
 net = tflearn.simple_rnn(net, n_units=32, return_seq=False)
 net = tflearn.fully_connected(net, 1, activation='linear')  # Why switch from rnn type? Is this an operator on net?
-net = tflearn.regression(net, optimizer='sgd', loss='mean_square', learning_rate=0.1)
+net = tflearn.regression(net, optimizer='Adam', loss='mean_square', learning_rate=0.1)
 
 
 if runTraining:
     # Training
-    model = tflearn.DNN(net, clip_gradients=0.0, tensorboard_verbose=0)
+    model = tflearn.DNN(net, tensorboard_verbose=3)
     model.fit(trainX, trainY, n_epoch=15, validation_set=0.1, batch_size=128)
 
     # Test the trained model

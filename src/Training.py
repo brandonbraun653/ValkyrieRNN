@@ -232,17 +232,20 @@ class ModelTrainer:
 
         # Grab the particular model function in use
         assert (isinstance(self.cfg.model_type, str))
-
-        if self.cfg.model_type == 'drone_rnn_model':
-            model_func = TFModels.drone_rnn_model
-        elif self.cfg.model_type == 'drone_lstm_model_deep':
-            model_func = TFModels.drone_lstm_model_deep
-        elif self.cfg.model_type == 'drone_lstm_deeply_connected':
-            model_func = TFModels.drone_lstm_deeply_connected
-        elif self.cfg.model_type == 'drone_lstm_sandbox1':
-            model_func = TFModels.drone_lstm_sandbox1
+        if self.cfg.model_type in TFModels.function_dispatcher:
+            model_func = TFModels.function_dispatcher[self.cfg.model_type]
         else:
             raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
+        # if self.cfg.model_type == 'drone_rnn_model':
+        #     model_func = TFModels.drone_rnn_model
+        # elif self.cfg.model_type == 'drone_lstm_model_deep':
+        #     model_func = TFModels.drone_lstm_model_deep
+        # elif self.cfg.model_type == 'drone_lstm_deeply_connected':
+        #     model_func = TFModels.drone_lstm_deeply_connected
+        # elif self.cfg.model_type == 'drone_lstm_sandbox1':
+        #     model_func = TFModels.drone_lstm_sandbox1
+        # else:
+        #     raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
 
         # All models are guaranteed to have this input form
         return model_func(shape=model_input_shape,

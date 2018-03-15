@@ -60,14 +60,14 @@ if __name__ == "__main__":
 
     # Generate the model configuration for a large training set
     cfg = TFModels.ModelConfig()
-    cfg.model_name = 'eulerSingleOutputNonInverted'
+    cfg.model_name = 'eulerSingleOutputNonInverted_ShallowQuadLSTM'
     cfg.model_type = 'drone_lstm_model_shallow'
     cfg.input_size = 4      # Inputs are motor commands
     cfg.input_depth = 500    # Multiply by 0.002 to get seconds represented
     cfg.output_size = 1     # Outputs are pitch and roll angles
     cfg.batch_len = 128
     cfg.epoch_len = 5
-    cfg.neurons_per_layer = 32
+    cfg.neurons_per_layer = 48
     cfg.learning_rate = 0.001
     cfg.layer_dropout = (0.99, 0.99)
     cfg.train_data_len = 25 * 1000

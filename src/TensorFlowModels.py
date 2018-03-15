@@ -291,6 +291,7 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
                           log_dir='/tmp/tflearn_logs/'):
     input_layer = tflearn.input_data(shape=shape)
 
+    # SHALLOW LAYER 1
     hidden_layers = tflearn.lstm(input_layer,
                                  n_units=layer_neurons,
                                  return_seq=True,
@@ -298,6 +299,7 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
 
     hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
 
+    # SHALLOW LAYER 2
     hidden_layers = tflearn.lstm(hidden_layers,
                                  n_units=layer_neurons,
                                  return_seq=True,
@@ -305,6 +307,15 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
 
     hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
 
+    # SHALLOW LAYER 3
+    hidden_layers = tflearn.lstm(hidden_layers,
+                                 n_units=layer_neurons,
+                                 return_seq=True,
+                                 dropout=layer_dropout)
+
+    hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    # SHALLOW LAYER 4
     hidden_layers = tflearn.lstm(hidden_layers,
                                  n_units=layer_neurons,
                                  return_seq=False,
@@ -312,6 +323,7 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
 
     hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
 
+    # Improve the dynamic full scale range of the output
     hidden_layers = tflearn.fully_connected(hidden_layers, n_units=50)  # Improves the dynamic range
     hidden_layers = tflearn.fully_connected(hidden_layers, n_units=dim_out)
 

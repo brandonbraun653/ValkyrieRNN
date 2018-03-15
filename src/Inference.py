@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
-
+import os
+import glob
 import time
 import tflearn
 import tensorflow as tf
@@ -9,26 +10,14 @@ import matlab.engine
 import matplotlib; matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-
 import src.TensorFlowModels as TFModels
 import src.MotorController as MotorController
+
 from src.ControlSystem import AxisController
 from src.Miscellaneous import bcolors
 
 from Scripts.Matlab.MatlabIOHelper import matlab_matrix_to_numpy, numpy_matrix_to_matlab
 from src.TensorFlowModels import ModelConfig
-
-"""
-IMPORTANT NOTES:
-
-1. Process all the raw data from the simulation into a Matlab file that will smooth and then calculate the step response
-characteristics. See:
-     https://www.mathworks.com/help/control/ref/stepinfo.html
-     https://www.mathworks.com/help/matlab/ref/smoothdata.html
-     https://www.mathworks.com/help/matlab/matlab_external/call-user-script-and-function-from-python.html
-     https://www.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
-     
-"""
 
 
 class StepResponseMetrics:
@@ -40,8 +29,88 @@ class StepResponseMetrics:
 
 
 class ModelInferencer:
-    def __init__(self):
-        pass
+    """
+    Design Notes:
+    1. What does an inferencer need to do?
+        a. Build a model
+        b. Import some data to use
+        c. Run the model
+        d. Output results
+
+    2. ?
+    """
+    def __init__(self, config_path=None, model_checkpoint=None, data_path=None):
+        """
+        TODO: Fill out when complete
+        :param config_path: Location where a configuration .csv is located
+        :param model_checkpoint: Specific model checkpoint to load
+        :param data_path: Location for all data to be inferenced. Only reference the directory.
+        """
+        self.cfg = ModelConfig()
+        self.cfg.load(config_path)
+
+        self.model = None
+        self.model_inferencing_files = []
+
+        self._model_checkpoint_path = model_checkpoint
+        self._inference_data_path = data_path
+
+
+    def setup(self):
+        # Attempt to pull in a saved model. This may take a bit depending on size.
+        print(bcolors.OKBLUE + 'Initializing: ' + self.cfg.model_name + bcolors.ENDC)
+        try:
+            with tf.variable_scope(self.cfg.variable_scope):
+                self.model = self._generate_model()
+
+            self.model.load(self._model_checkpoint_path)
+        except:
+            print("Model failed loading. Check the config settings vs the model you think you are loading.")
+
+        print(bcolors.OKBLUE + 'Initialization Success' + bcolors.ENDC)
+
+        # Figure out what files are available for inferencing
+        self.model_inferencing_files = glob.glob(self._inference_data_path + '*.csv')
+
+    def predict(self, file=None):
+        """
+        Predicts the output of a model given a set of inputs from a file
+        :param file:
+        :return: Numpy array of output data
+        """
+        raise NotImplementedError()
+
+    def evaluate(self, file=None):
+        raise NotImplementedError()
+
+    def _generate_model(self):
+        """
+        A factory function to generate a system model based upon values in the
+        class config object
+        """
+        if self.cfg.data_inversion:
+            model_input_shape = [None, self.cfg.input_size, self.cfg.input_depth]
+        else:
+            model_input_shape = [None, self.cfg.input_depth, self.cfg.input_size]
+
+        # Grab the particular model function in use
+        assert (isinstance(self.cfg.model_type, str))
+        if self.cfg.model_type in TFModels.function_dispatcher:
+            model_func = TFModels.function_dispatcher[self.cfg.model_type]
+        else:
+            raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
+
+        # All models are guaranteed to have this input form. No checkpoint paths
+        # are specified because this model will never be used for training.
+        return model_func(shape=model_input_shape,
+                          dim_in=self.cfg.input_size,
+                          dim_out=self.cfg.output_size,
+                          past_depth=self.cfg.input_depth,
+                          layer_neurons=self.cfg.neurons_per_layer,
+                          layer_dropout=self.cfg.layer_dropout,
+                          learning_rate=self.cfg.learning_rate)
+
+
 
 
 class DroneModel:

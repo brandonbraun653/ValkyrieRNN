@@ -60,10 +60,10 @@ if __name__ == "__main__":
 
     # Generate the model configuration for a large training set
     cfg = TFModels.ModelConfig()
-    cfg.model_name = 'eulerSingleOutputNonInverted'
+    cfg.model_name = 'SmallInferenceTestModel'
     cfg.model_type = 'drone_lstm_model_shallow'
     cfg.input_size = 4      # Inputs are motor commands
-    cfg.input_depth = 500    # Multiply by 0.002 to get seconds represented
+    cfg.input_depth = 5    # Multiply by 0.002 to get seconds represented
     cfg.output_size = 1     # Outputs are pitch and roll angles
     cfg.batch_len = 128
     cfg.epoch_len = 5

@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import tflearn
 import pandas as pd
+import re
 
 
 class ModelConfig:
@@ -39,6 +40,7 @@ class ModelConfig:
 
     def load(self, file_name):
         self._config_data = pd.read_csv(file_name)
+        self._clean()
 
     def append_new_column(self, key='', value=None):
         assert(isinstance(key, str))
@@ -57,6 +59,14 @@ class ModelConfig:
         if key not in self._config_data.keys():
             raise ValueError("Key doesn't exist?")
         return self._config_data[key][0]
+
+    def _clean(self):
+        # Strip out all non-alphanumeric characters from the saved data.
+        in_keys = [re.sub(r'\W+', '', x) for x in self.input_keys.split(',')]
+        out_keys = [re.sub(r'\W+', '', x) for x in self.output_keys.split(',')]
+
+        self._config_data[self._input_data_key] = pd.Series([in_keys])
+        self._config_data[self._output_data_key] = pd.Series([out_keys])
 
     @property
     def input_keys(self):

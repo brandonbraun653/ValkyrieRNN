@@ -7,12 +7,13 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import matlab.engine
-import matplotlib; matplotlib.use('TkAgg')
+import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import src.TensorFlowModels as TFModels
 import src.MotorController as MotorController
 
+from src.DataHandling import DataHandler
 from src.ControlSystem import AxisController
 from src.Miscellaneous import bcolors
 
@@ -28,17 +29,7 @@ class StepResponseMetrics:
         self.steady_state_error = 0
 
 
-class ModelInferencer:
-    """
-    Design Notes:
-    1. What does an inferencer need to do?
-        a. Build a model
-        b. Import some data to use
-        c. Run the model
-        d. Output results
-
-    2. ?
-    """
+class ModelInferencer(DataHandler):
     def __init__(self, config_path=None, model_checkpoint=None, data_path=None):
         """
         TODO: Fill out when complete
@@ -48,6 +39,9 @@ class ModelInferencer:
         """
         self.cfg = ModelConfig()
         self.cfg.load(config_path)
+
+        # Initialize the data handler
+        super().__init__(self.cfg)
 
         self.model = None
         self.model_inferencing_files = []
@@ -60,28 +54,49 @@ class ModelInferencer:
         print(bcolors.OKBLUE + 'Initializing: ' + self.cfg.model_name + bcolors.ENDC)
         print(bcolors.OKBLUE + 'This may take a bit, so please be patient' + bcolors.ENDC)
         try:
-            with tf.variable_scope(self.cfg.variable_scope):
+            with tf.Graph().as_default(), tf.variable_scope(self.cfg.variable_scope):
                 self.model = self._generate_model()
 
-            self.model.load(self._model_checkpoint_path)
+                self.model.load(self._model_checkpoint_path)
         except:
             print("Model failed loading. Check the config settings vs the model you think you are loading.")
+            raise Exception
 
         print(bcolors.OKBLUE + 'Initialization Success' + bcolors.ENDC)
 
         # Figure out what files are available for inferencing
         self.model_inferencing_files = glob.glob(self._inference_data_path + '*.csv')
 
-    def predict(self, file=None):
+    def predict(self, file=None, existing_model=None):
         """
-        Predicts the output of a model given a set of inputs from a file
+        Predicts the output of a model given a set of inputs from a file.
+        If an existing model is to be used, setup() does not need to be called
         :param file:
+        :param existing_model:
         :return: Numpy array of output data
         """
-        raise NotImplementedError()
+        x, actual_y = super().generate_validation_data(file)
 
-    def evaluate(self, file=None):
-        raise NotImplementedError()
+        if existing_model is None:
+            predict_y = self.model.predict(x)
+        else:
+            predict_y = existing_model.predict(x)
+
+        return predict_y, actual_y
+
+    def evaluate(self, file=None, existing_model=None):
+        x, y = super().generate_validation_data(file)
+
+        # The session is needed to know what state the model was in. Apparently,
+        # the evaluate function does not work without it.
+        if existing_model is None:
+            with self.model.session:
+                score = self.model.evaluate(x, y)
+        else:
+            with existing_model.session:
+                score = existing_model.evaluate(x, y)
+
+        return score
 
     def _generate_model(self):
         """
@@ -109,8 +124,6 @@ class ModelInferencer:
                           layer_neurons=self.cfg.neurons_per_layer,
                           layer_dropout=self.cfg.layer_dropout,
                           learning_rate=self.cfg.learning_rate)
-
-
 
 
 class DroneModel:
@@ -565,9 +578,28 @@ class DroneModel:
 
 
 if __name__ == "__main__":
+    cfg = 'G:/Projects/ValkyrieRNN/Simulation/SmallInferenceTestModel/config.csv'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/SmallInferenceTestModel/training/best_results/SmallInferenceTestModel7816'
+
     cfg = 'G:/Projects/ValkyrieRNN/Simulation/eulerSingleOutputNonInverted/config.csv'
-    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/eulerSingleOutputNonInverted/training/best_results/checkpoint/'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/eulerSingleOutputNonInverted/training/best_results/eulerSingleOutputNonInverted26624'
+
     data = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
 
     test = ModelInferencer(config_path=cfg, model_checkpoint=ckpt, data_path=data)
     test.setup()
+
+    fileNum = 0
+    yp, yt = test.predict(test.model_inferencing_files[1])
+    score = test.evaluate(test.model_inferencing_files[1])
+    print(score)
+
+    lw = 0.8
+    plt.figure(figsize=(32, 18))
+    plt.suptitle('Validation Data Predictions')
+    plt.plot(yt[:, 0], 'g--', label='Ground Truth', linewidth=lw)
+    plt.plot(yp[:, 0], 'r-', label='Prediction', linewidth=2 * lw)
+    plt.legend()
+    plt.savefig('validateNum'+str(fileNum)+'.png')
+
+

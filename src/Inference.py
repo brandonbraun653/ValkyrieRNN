@@ -55,10 +55,10 @@ class ModelInferencer:
         self._model_checkpoint_path = model_checkpoint
         self._inference_data_path = data_path
 
-
     def setup(self):
         # Attempt to pull in a saved model. This may take a bit depending on size.
         print(bcolors.OKBLUE + 'Initializing: ' + self.cfg.model_name + bcolors.ENDC)
+        print(bcolors.OKBLUE + 'This may take a bit, so please be patient' + bcolors.ENDC)
         try:
             with tf.variable_scope(self.cfg.variable_scope):
                 self.model = self._generate_model()
@@ -565,4 +565,9 @@ class DroneModel:
 
 
 if __name__ == "__main__":
-    print('Hello')
+    cfg = 'G:/Projects/ValkyrieRNN/Simulation/eulerSingleOutputNonInverted/config.csv'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/eulerSingleOutputNonInverted/training/best_results/checkpoint/'
+    data = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
+
+    test = ModelInferencer(config_path=cfg, model_checkpoint=ckpt, data_path=data)
+    test.setup()

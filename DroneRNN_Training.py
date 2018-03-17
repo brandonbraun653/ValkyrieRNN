@@ -47,10 +47,6 @@ def validate_plot_callback(valid_act, valid_pred):
 
 
 if __name__ == "__main__":
-    max_cpu_cores = 16
-    max_gpu_mem = 0.8
-    max_input_depth = 1250
-
     # Global training paths
     train_data_path = 'G:/Projects/ValkyrieRNN/Data/TrainingData/'
     validation_data_path = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
@@ -60,13 +56,13 @@ if __name__ == "__main__":
 
     # Generate the model configuration for a large training set
     cfg = TFModels.ModelConfig()
-    cfg.model_name = 'eulerSingleOutputNonInverted'
+    cfg.model_name = 'pitch_full_ver1'
     cfg.model_type = 'drone_lstm_model_shallow'
     cfg.input_size = 4      # Inputs are motor commands
-    cfg.input_depth = 500    # Multiply by 0.002 to get seconds represented
+    cfg.input_depth = 300   # Multiply by 0.002 to get seconds represented
     cfg.output_size = 1     # Outputs are pitch and roll angles
     cfg.batch_len = 128
-    cfg.epoch_len = 5
+    cfg.epoch_len = 3
     cfg.neurons_per_layer = 32
     cfg.learning_rate = 0.001
     cfg.layer_dropout = (0.99, 0.99)
@@ -75,7 +71,7 @@ if __name__ == "__main__":
 
     cfg.max_cpu_cores = 16
     cfg.max_gpu_mem = 0.6
-    cfg.variable_scope = 'euler'
+    cfg.variable_scope = 'euler_pitch'
     cfg.training_device = '/gpu:0'
 
     config_path = 'C:/git/GitHub/ValkyrieRNN/' + cfg.model_name + '.csv'
@@ -88,7 +84,7 @@ if __name__ == "__main__":
                         results_path=results_root)
 
     in_keys = ['m1CMD', 'm2CMD', 'm3CMD', 'm4CMD']
-    out_keys = ['roll'] #, 'roll']
+    out_keys = ['pitch'] #, 'roll']
 
     temp.train_from_scratch(input_data_keys=in_keys, output_data_keys=out_keys,
                             training_plot_callback=train_plot_callback,

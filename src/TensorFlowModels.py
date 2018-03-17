@@ -34,7 +34,6 @@ class ModelConfig:
         self._input_data_key = 'input_key'
         self._output_data_key = 'output_key'
 
-
     def save(self, file_name):
         self._config_data.to_csv(file_name, sep=',', encoding='utf-8')
 
@@ -62,11 +61,13 @@ class ModelConfig:
 
     def _clean(self):
         # Strip out all non-alphanumeric characters from the saved data.
-        in_keys = [re.sub(r'\W+', '', x) for x in self.input_keys.split(',')]
-        out_keys = [re.sub(r'\W+', '', x) for x in self.output_keys.split(',')]
+        if self._input_data_key in self._config_data:
+            in_keys = [re.sub(r'\W+', '', x) for x in self.input_keys.split(',')]
+            self._config_data[self._input_data_key] = pd.Series([in_keys])
 
-        self._config_data[self._input_data_key] = pd.Series([in_keys])
-        self._config_data[self._output_data_key] = pd.Series([out_keys])
+        if self._output_data_key in self._config_data:
+            out_keys = [re.sub(r'\W+', '', x) for x in self.output_keys.split(',')]
+            self._config_data[self._output_data_key] = pd.Series([out_keys])
 
     @property
     def input_keys(self):
@@ -310,17 +311,17 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
 
     hidden_layers = tflearn.lstm(hidden_layers,
                                  n_units=layer_neurons,
-                                 return_seq=True,
-                                 dropout=layer_dropout)
-
-    hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
-
-    hidden_layers = tflearn.lstm(hidden_layers,
-                                 n_units=layer_neurons,
                                  return_seq=False,
                                  dropout=layer_dropout)
 
     hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    # hidden_layers = tflearn.lstm(hidden_layers,
+    #                              n_units=layer_neurons,
+    #                              return_seq=False,
+    #                              dropout=layer_dropout)
+    #
+    # hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
 
     hidden_layers = tflearn.fully_connected(hidden_layers, n_units=50)  # Improves the dynamic range
     hidden_layers = tflearn.fully_connected(hidden_layers, n_units=dim_out)

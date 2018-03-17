@@ -1,0 +1,2 @@
+,model_name,model_type,input_size,input_depth,output_size,batch_len,epoch_len,neurons_per_layer,learning_rate,layer_dropout_1,layer_dropout_2,train_data_len,data_inversion,max_cpu_cores,max_gpu_mem,var_scope,train_dev_key
+0,pitch_full_ver1,drone_lstm_model_shallow,4,300,1,128,3,32,0.001,0.99,0.99,25000,False,16,0.6,euler_pitch,/gpu:0

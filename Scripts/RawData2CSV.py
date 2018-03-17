@@ -557,7 +557,7 @@ if __name__ == "__main__":
 
     gyro_max = 250
     gyro_min = -250
-    motor_max = 1860
+    motor_max = 1650
     motor_min = 1060
     parser.smooth_time_series_data(gyro_max=gyro_max,
                                    gyro_min=gyro_min,

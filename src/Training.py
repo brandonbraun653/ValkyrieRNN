@@ -126,6 +126,9 @@ class ModelTrainer:
                     # Fit on each data set
                     # ---------------------------------------
                     for train_iteration in range(0, total_train_iterations):
+                        print(bcolors.OKGREEN + 'Iteration ' + str(train_iteration+1) + ' of ' +
+                              str(total_train_iterations) + bcolors.ENDC)
+
                         model.fit(X_inputs=t_inputs[train_iteration],
                                   Y_targets=t_targets[train_iteration],
                                   n_epoch=self.cfg.epoch_len,
@@ -267,7 +270,7 @@ class ModelTrainer:
                 train_x, train_y = self._fill_data(raw_inputs=input_full,
                                                    raw_targets=output_full,
                                                    start_idx=current_train_idx,
-                                                   end_idx=(total_samples - current_train_idx - self.cfg.input_depth))
+                                                   end_idx=(total_samples - self.cfg.input_depth))
 
             # Return the data in the correct format for direct input into the network
             output_x[iteration], output_y[iteration] = self._reshape_data(train_x, train_y)

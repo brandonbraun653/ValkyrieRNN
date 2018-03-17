@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
-
+import os
+import glob
 import time
 import tflearn
 import tensorflow as tf
@@ -9,26 +10,15 @@ import matlab.engine
 import matplotlib; matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-
 import src.TensorFlowModels as TFModels
 import src.MotorController as MotorController
+
+from src.DataHandling import DataHandler
 from src.ControlSystem import AxisController
 from src.Miscellaneous import bcolors
 
 from Scripts.Matlab.MatlabIOHelper import matlab_matrix_to_numpy, numpy_matrix_to_matlab
 from src.TensorFlowModels import ModelConfig
-
-"""
-IMPORTANT NOTES:
-
-1. Process all the raw data from the simulation into a Matlab file that will smooth and then calculate the step response
-characteristics. See:
-     https://www.mathworks.com/help/control/ref/stepinfo.html
-     https://www.mathworks.com/help/matlab/ref/smoothdata.html
-     https://www.mathworks.com/help/matlab/matlab_external/call-user-script-and-function-from-python.html
-     https://www.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
-     
-"""
 
 
 class StepResponseMetrics:
@@ -39,19 +29,162 @@ class StepResponseMetrics:
         self.steady_state_error = 0
 
 
-class DroneModel:
-    def __init__(self, euler_cfg_path='', gyro_cfg_path=''):
-        self._euler_cfg_path = euler_cfg_path
-        self._euler_cfg = ModelConfig()
-        self._euler_model = None
-        self._euler_graph = tf.Graph()
-        self._euler_input_shape = None
+class ModelInferencer(DataHandler):
+    def __init__(self, config_path=None, model_checkpoint=None, data_path=None):
+        """
+        TODO: Fill out when complete
+        :param config_path: Location where a configuration .csv is located
+        :param model_checkpoint: Specific model checkpoint to load
+        :param data_path: Location for all data to be inferenced. Only reference the directory.
+        """
+        self.cfg = ModelConfig()
+        self.cfg.load(config_path)
 
-        self._gyro_cfg_path = gyro_cfg_path
-        self._gyro_cfg = ModelConfig()
-        self._gyro_model = None
-        self._gyro_graph = tf.Graph()
-        self._gyro_input_shape = None
+        # Initialize the data handler
+        super().__init__(self.cfg)
+
+        self.model = None
+        self.model_graph = tf.Graph()
+        self.model_inferencing_files = []
+
+        self._model_checkpoint_path = model_checkpoint
+        self._inference_data_path = data_path
+
+    def setup(self):
+        # Attempt to pull in a saved model. This may take a bit depending on size.
+        print(bcolors.OKBLUE + 'Initializing: ' + self.cfg.model_name + bcolors.ENDC)
+        print(bcolors.OKBLUE + 'This may take a bit, so please be patient' + bcolors.ENDC)
+        try:
+            with self.model_graph.as_default(), tf.variable_scope(self.cfg.variable_scope):
+                self.model = self._generate_model()
+                self.model.load(self._model_checkpoint_path)
+        except:
+            print("Model failed loading. Check the config settings vs the model you think you are loading.")
+            raise Exception
+
+        print(bcolors.OKBLUE + 'Initialization Success' + bcolors.ENDC)
+
+        # Figure out what files are available for inferencing
+        self.model_inferencing_files = glob.glob(self._inference_data_path + '*.csv')
+
+    def predict(self, file=None, existing_model=None):
+        """
+        Predicts the output of a model given a set of inputs from a file.
+        If an existing model is to be used, setup() does not need to be called
+        :param file:
+        :param existing_model:
+        :return: Numpy array of output data
+        """
+        x, actual_y = super().generate_validation_data(file)
+
+        if existing_model is None:
+            predict_y = self.model.predict(x)
+            predict_y = self.model.predict(x)
+        else:
+            predict_y = existing_model.predict(x)
+
+        return predict_y, actual_y
+
+    def evaluate(self, file=None, existing_model=None):
+        x, y = super().generate_validation_data(file)
+
+        # The session is needed to know what state the model was in. Apparently,
+        # the evaluate function does not work without it.
+        if existing_model is None:
+            with self.model.session:
+                score = self.model.evaluate(x, y)
+        else:
+            with existing_model.session:
+                score = existing_model.evaluate(x, y)
+
+        return score
+
+    def _generate_model(self):
+        """
+        A factory function to generate a system model based upon values in the
+        class config object
+        """
+        if self.cfg.data_inversion:
+            model_input_shape = [None, self.cfg.input_size, self.cfg.input_depth]
+        else:
+            model_input_shape = [None, self.cfg.input_depth, self.cfg.input_size]
+
+        # Grab the particular model function in use
+        assert (isinstance(self.cfg.model_type, str))
+        if self.cfg.model_type in TFModels.function_dispatcher:
+            model_func = TFModels.function_dispatcher[self.cfg.model_type]
+        else:
+            raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
+
+        # All models are guaranteed to have this input form. No checkpoint paths
+        # are specified because this model will never be used for training.
+        return model_func(shape=model_input_shape,
+                          dim_in=self.cfg.input_size,
+                          dim_out=self.cfg.output_size,
+                          past_depth=self.cfg.input_depth,
+                          layer_neurons=self.cfg.neurons_per_layer,
+                          layer_dropout=self.cfg.layer_dropout,
+                          learning_rate=self.cfg.learning_rate)
+
+
+class DroneModel:
+    available_euler_models = ['pitch', 'roll', 'yaw', 'full_euler_model']
+    available_gyro_models = ['gx', 'gy', 'gz', 'full_gyro_model']
+
+    def __init__(self, euler_cfg_dict={}, euler_mdl_dict={}, gyro_cfg_dict={}, gyro_mdl_dict={}):
+        """
+        Expects the user to pass in a variable number of paths to the kinds of models implemented.
+        To correctly pass in the paths, use the available_euler/gyro_models lists as keys.
+
+        :param euler_cfg_dict: Dictionary of paths to 'pitch', 'roll', 'yaw', or 'full_model' model configs
+        :param gyro_cfg_dict: Dictionary of paths to 'gx', 'gy', 'gz', or 'full_model' model configs
+        """
+        for key in euler_cfg_dict:
+            if key not in self.available_euler_models:
+                print(bcolors.WARNING + 'Invalid key found in euler_cfg_dict!' + bcolors.ENDC)
+                raise ValueError
+
+            if key not in euler_mdl_dict:
+                print(bcolors.WARNING + 'Key not found in euler_mdl_dict!' + bcolors.ENDC)
+                raise ValueError
+
+        for key in gyro_cfg_dict:
+            if key not in self.available_gyro_models:
+                print(bcolors.WARNING + 'Invalid key found in gyro_cfg_dict!' + bcolors.ENDC)
+                raise ValueError
+
+            if key not in gyro_mdl_dict:
+                print(bcolors.WARNING + 'Key not found in gyro_mdl_dict!' + bcolors.ENDC)
+                raise ValueError
+
+        # --------------------------------
+        # Euler Model Setup
+        # --------------------------------
+        # Load in all given Euler Model configuration files if key is valid
+        self._euler_cfg = {key: ModelConfig() for key in euler_cfg_dict}
+        [self._euler_cfg[key].load(euler_cfg_dict[key]) for key in self._euler_cfg]
+
+        # Generate the model placeholders & checkpoint locations
+        self._euler_model = {key: None for key in self._euler_cfg}
+        self._euler_graph = {key: tf.Graph() for key in self._euler_cfg}
+        self._euler_chkpt = euler_mdl_dict
+
+        # Create the training/validation data handlers. This only initializes
+        # valid keys found from the input dict
+        self._euler_data = {key: DataHandler(self._euler_cfg[key]) for key in self._euler_cfg}
+
+        # --------------------------------
+        # Gyro Model Setup
+        # --------------------------------
+        self._gyro_cfg = {key: ModelConfig() for key in gyro_cfg_dict}
+        [self._gyro_cfg[key].load(gyro_cfg_dict[key]) for key in self._gyro_cfg]
+
+        self._gyro_model = {key: None for key in self._gyro_cfg}
+        self._gyro_graph = {key: tf.Graph() for key in self._gyro_cfg}
+        self._gyro_chkpt = gyro_mdl_dict
+
+        self._gyro_data = {key: DataHandler(self._gyro_cfg[key]) for key in self._gyro_cfg}
+
 
         self._matlab_engine = None
 
@@ -71,116 +204,41 @@ class DroneModel:
         self.motor_range_mapped_min = 0.0              # NN input min throttle signal (unitless)
 
     def initialize(self, ahrs_sample_freq, pid_update_freq):
-        """
-        Do things like set up the time series inputs for things like
-        step functions, buffer sizes, NN model, Matlab environment etc
-        :return:
-        """
         self._pid_sample_time_mS = int((1.0 / pid_update_freq) * 1000.0)
         self._sim_dt = 1.0 / ahrs_sample_freq
 
         # -----------------------------
-        # Setup the Euler prediction network
+        # Initialize the Euler Models
         # -----------------------------
-        self._euler_cfg.load(self._euler_cfg_path)
-        with self._euler_graph.as_default(), tf.variable_scope('euler'):
-            print(bcolors.OKGREEN + 'Initializing Euler Model' + bcolors.ENDC)
+        for key in self._euler_cfg:
+            with self._euler_graph[key].as_default(), tf.variable_scope(self._euler_cfg[key].variable_scope):
+                print(bcolors.OKGREEN + 'Initializing Euler Model: ' + key + bcolors.ENDC)
+                print(bcolors.OKGREEN + 'Model Name: ' + self._euler_cfg[key].model_name + bcolors.ENDC)
 
-            # Make sure the input shape matches the cfg file
-            if self._euler_cfg.data_inversion:
-                self._euler_input_shape = [None, self._euler_cfg.input_size, self._euler_cfg.input_depth]
-            else:
-                self._euler_input_shape = [None, self._euler_cfg.input_depth, self._euler_cfg.input_size]
+                self._euler_model[key] = self._generate_model(config=self._euler_cfg[key])
+                self._euler_model[key].load(self._euler_chkpt[key])
 
-            # Select the proper model type
-            if 'lstm_model_deep' in self._euler_cfg.model_type:
-                self._euler_model = TFModels.drone_lstm_model_deep(shape=self._euler_input_shape,
-                                                                   dim_in=self._euler_cfg.input_size,
-                                                                   dim_out=self._euler_cfg.output_size,
-                                                                   past_depth=self._euler_cfg.input_depth,
-                                                                   layer_neurons=self._euler_cfg.neurons_per_layer,
-                                                                   layer_dropout=self._euler_cfg.layer_dropout,
-                                                                   learning_rate=self._euler_cfg.learning_rate)
-            elif 'rnn' in self._euler_cfg.model_type:
-                self._euler_model = TFModels.drone_rnn_model(shape=self._euler_input_shape,
-                                                             dim_in=self._euler_cfg.input_size,
-                                                             dim_out=self._euler_cfg.output_size,
-                                                             past_depth=self._euler_cfg.input_depth,
-                                                             layer_neurons=self._euler_cfg.neurons_per_layer,
-                                                             layer_dropout=self._euler_cfg.layer_dropout,
-                                                             learning_rate=self._euler_cfg.learning_rate)
-            elif 'deeply_connected' in self._euler_cfg.model_type:
-                self._euler_model = TFModels.drone_lstm_deeply_connected(shape=self._euler_input_shape,
-                                                                         dim_in=self._euler_cfg.input_size,
-                                                                         dim_out=self._euler_cfg.output_size,
-                                                                         past_depth=self._euler_cfg.input_depth,
-                                                                         layer_neurons=self._euler_cfg.neurons_per_layer,
-                                                                         layer_dropout=self._euler_cfg.layer_dropout,
-                                                                         learning_rate=self._euler_cfg.learning_rate)
-
-            # TODO: Somehow I need to log the "extension" code for these model checkpoints
-            self._euler_model.load(self._euler_cfg.best_chkpt_path + '7871')
-            print(bcolors.OKGREEN + "Loaded archived Euler model" + bcolors.ENDC)
-
-            # Reset the input shape for use in numpy matrix initializations later: None -> -1
-            # Hard coding is ok due to TF framework requiring the 'None' keyword always be the first
-            # value in the input shape list. See: http://tflearn.org/layers/core/
-            self._euler_input_shape[0] = -1
+                print(bcolors.OKGREEN + 'Loaded archived model' + bcolors.ENDC + '\n')
 
         # -----------------------------
-        # Setup the Gyro prediction network
+        # Initialize the Gyro Models
         # -----------------------------
-        self._gyro_cfg.load(self._gyro_cfg_path)
-        with self._gyro_graph.as_default(), tf.variable_scope('gyro'):
-            print(bcolors.OKGREEN + "Initializing Gyro Model..." + bcolors.ENDC)
+        for key in self._gyro_cfg:
+            with self._gyro_graph[key].as_default(), tf.variable_scope(self._gyro_cfg[key].variable_scope):
+                print(bcolors.OKGREEN + 'Initializing Gyro Model: ' + key + bcolors.ENDC)
+                print(bcolors.OKGREEN + 'Model Name: ' + self._gyro_cfg[key].model_name + bcolors.ENDC)
 
-            # Make sure the input shape matches the cfg file
-            if self._gyro_cfg.data_inversion:
-                self._gyro_input_shape = [None, self._gyro_cfg.input_size, self._gyro_cfg.input_depth]
-            else:
-                self._gyro_input_shape = [None, self._gyro_cfg.input_depth, self._gyro_cfg.input_size]
+                self._gyro_model[key] = self._generate_model(config=self._gyro_cfg[key])
+                self._gyro_model[key].load(self._gyro_chkpt[key])
 
-            # Select the proper model type
-            if 'lstm_model_deep' in self._gyro_cfg.model_type:
-                self._gyro_model = TFModels.drone_lstm_model_deep(shape=self._gyro_input_shape,
-                                                                  dim_in=self._gyro_cfg.input_size,
-                                                                  dim_out=self._gyro_cfg.output_size,
-                                                                  past_depth=self._gyro_cfg.input_depth,
-                                                                  layer_neurons=self._gyro_cfg.neurons_per_layer,
-                                                                  layer_dropout=self._gyro_cfg.layer_dropout,
-                                                                  learning_rate=self._gyro_cfg.learning_rate)
-            elif 'rnn' in self._gyro_cfg.model_type:
-                self._gyro_model = TFModels.drone_rnn_model(shape=self._gyro_input_shape,
-                                                            dim_in=self._gyro_cfg.input_size,
-                                                            dim_out=self._gyro_cfg.output_size,
-                                                            past_depth=self._gyro_cfg.input_depth,
-                                                            layer_neurons=self._gyro_cfg.neurons_per_layer,
-                                                            layer_dropout=self._gyro_cfg.layer_dropout,
-                                                            learning_rate=self._gyro_cfg.learning_rate)
-            elif 'deeply_connected' in self._gyro_cfg.model_type:
-                self._gyro_model = TFModels.drone_lstm_deeply_connected(shape=self._gyro_input_shape,
-                                                                        dim_in=self._gyro_cfg.input_size,
-                                                                        dim_out=self._gyro_cfg.output_size,
-                                                                        past_depth=self._gyro_cfg.input_depth,
-                                                                        layer_neurons=self._gyro_cfg.neurons_per_layer,
-                                                                        layer_dropout=self._gyro_cfg.layer_dropout,
-                                                                        learning_rate=self._gyro_cfg.learning_rate)
-
-            # TODO: Somehow I need to log the "extension" code for these model checkpoints
-            self._gyro_model.load(self._gyro_cfg.best_chkpt_path + '5622')
-            print(bcolors.OKGREEN + "Loaded archived Gyro model" + bcolors.ENDC)
-
-            # Reset the input shape for use in numpy matrix initializations later: None -> -1
-            # Hard coding is ok due to TF framework requiring the 'None' keyword always be the first
-            # value in the input shape list. See: http://tflearn.org/layers/core/
-            self._gyro_input_shape[0] = -1
+                print(bcolors.OKGREEN + 'Loaded archived model' + bcolors.ENDC + '\n')
 
         # -----------------------------
         # Setup the Matlab Engine
         # -----------------------------
-        print(bcolors.OKGREEN + "Starting Matlab Engine" + bcolors.ENDC)
-        self._matlab_engine = matlab.engine.start_matlab()
-        self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
+        # print(bcolors.OKGREEN + "Starting Matlab Engine" + bcolors.ENDC)
+        # self._matlab_engine = matlab.engine.start_matlab()
+        # self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
 
         # -----------------------------
         # Setup the PID controllers
@@ -196,7 +254,7 @@ class DroneModel:
 
         self._roll_ctrl = AxisController(angular_rate_range=100.0,
                                          motor_cmd_range=500.0,
-                                         angle_direction=True,
+                                         angle_direction=False,
                                          rate_direction=False,
                                          sample_time_ms=self._pid_sample_time_mS)
 
@@ -205,6 +263,180 @@ class DroneModel:
                                         angle_direction=True,
                                         rate_direction=True,
                                         sample_time_ms=self._pid_sample_time_mS)
+
+    def _simulate_axis(self, axis='', rate_axis='', input_sig=None, t_start=0.0, t_end=10.0,
+                       enable_rate_control=False, invert_rate_direction=False):
+        """
+        Simulates a particular axis's response to a given input signal over the range of t_start to t_end.
+        By default, only angle PID control is utilized. It is assumed that all PID constants have been
+        set to appropriate values before calling this method.
+
+        :param axis: Requested axis to simulate; valid values are 'pitch' 'roll' and 'yaw'
+        :param rate_axis: Axis around which param 'axis' rotates; valid values are 'gx', 'gy', 'gz'
+        :param input_sig: Dynamic signal that acts as input to the angle PID controller
+        :param t_start: simulation start time
+        :param t_end: simulation end time
+        :param enable_rate_control: Turns on or off rate control. Default False
+        :param invert_rate_direction: multiplies the predicted gyro signal by -1.0
+        :return:
+        """
+        # -----------------------------------
+        # Run a few precursory checks
+        # -----------------------------------
+        # Make sure the angle predictor model exists
+        if axis not in self._euler_model:
+            raise ValueError(bcolors.FAIL +
+                             'Requested axis ' + axis + ' does not exist in initialized models.' +
+                             bcolors.ENDC)
+
+        # Make sure the angular rate predictor model exists
+        if enable_rate_control:
+            if rate_axis not in self._gyro_cfg:
+                raise ValueError(bcolors.FAIL +
+                                 'Requested rate axis ' + rate_axis + ' does not exist in initialized models.' +
+                                 bcolors.ENDC)
+
+        # Force [1xN] input vector where N is the total simulation steps
+        in_shape = np.shape(input_sig)
+        assert(in_shape[0] == 1)
+        assert(in_shape[1] >= int(np.ceil((t_end - t_start) / self._sim_dt)))
+
+        # Both euler and gyro models should have been trained on the same shape input
+        if self._euler_cfg[axis].data_inversion:
+            euler_input_shape = [None, self._euler_cfg[axis].input_size, self._euler_cfg[axis].input_depth]
+        else:
+            euler_input_shape = [None, self._euler_cfg[axis].input_depth, self._euler_cfg[axis].input_size]
+
+        if enable_rate_control:
+            if self._gyro_cfg[rate_axis].data_inversion:
+                gyro_input_shape = [None, self._gyro_cfg[rate_axis].input_size, self._gyro_cfg[rate_axis].input_depth]
+            else:
+                gyro_input_shape = [None, self._gyro_cfg[rate_axis].input_depth, self._gyro_cfg[rate_axis].input_size]
+
+            assert(euler_input_shape == gyro_input_shape)
+            del gyro_input_shape
+
+        input_shape = euler_input_shape
+        del euler_input_shape
+
+        # -----------------------------------
+        # Initialize simulation vars
+        # -----------------------------------
+        num_sim_steps = int(np.ceil((t_end - t_start) / self._sim_dt))
+        time_history = np.linspace(t_start, t_end, num_sim_steps)
+
+        base_throttle = 1160.0
+        pitch_cmd = 0
+        roll_cmd = 0
+        yaw_cmd = 0
+
+        # Serves as input to both models. Latest value is in the last column [:, -1]
+        model_input_series = np.zeros([input_shape[1], input_shape[2]])
+
+        # Logs output of models
+        euler_output = np.zeros([1, num_sim_steps])
+        gyro_output = np.zeros([1, num_sim_steps])
+
+        # Logs the most recent input to the neural network (does not include full time history)
+        model_cmd_log = np.zeros([self._euler_cfg[axis].input_size, num_sim_steps])
+        in_sig_cmd_log = np.zeros([1, num_sim_steps])
+
+        # -----------------------------------
+        # Run the full simulation of the input signals
+        # -----------------------------------
+        print(bcolors.OKGREEN + 'Starting simulation of ' + axis + ' axis' + bcolors.ENDC)
+        tick_start = time.perf_counter()
+
+        current_step = 0
+        current_time = 0.0
+        last_time = 0.0
+        while current_step < num_sim_steps:
+            print(bcolors.OKGREEN + 'Step ' + str(current_step) + ' of ' + str(num_sim_steps) + bcolors.ENDC)
+
+            # -----------------------------------
+            # Generate a new motor signal
+            # -----------------------------------
+            in_sig_cmd_log[0, current_step] = input_sig[0, current_step]
+
+            # Only update the pid controller at the correct frequency
+            if (current_time - last_time) > (self._pid_sample_time_mS / 1000.0):
+                last_time = current_time
+
+                if axis == 'pitch':
+                    pitch_cmd = self._step_pitch_controller(
+                        angle_setpoint=input_sig[0, current_step],          # Current angle setpoint
+                        angle_feedback=euler_output[0, current_step-1],     # Last computed pitch angle
+                        rate_feedback=gyro_output[0, current_step-1],       # Last computed pitch rate
+                        en_rate_ctrl=enable_rate_control)
+
+                elif axis == 'roll':
+                    roll_cmd = self._step_roll_controller(
+                        angle_setpoint=input_sig[0, current_step],          # Current angle setpoint
+                        angle_feedback=euler_output[0, current_step - 1],   # Last computed pitch angle
+                        rate_feedback=gyro_output[0, current_step - 1],     # Last computed pitch rate
+                        en_rate_ctrl=enable_rate_control)
+
+                elif axis == 'yaw':
+                    yaw_cmd = self._step_yaw_controller(
+                        angle_setpoint=input_sig[0, current_step],          # Current angle setpoint
+                        angle_feedback=euler_output[0, current_step-1],     # Last computed yaw angle
+                        rate_feedback=gyro_output[0, current_step-1],       # Last computed yaw rate
+                        en_rate_ctrl=enable_rate_control)
+
+            # Add some noise to help excite internal mode dynamics
+            noise = np.random.uniform(0.0, 1.0, [self._euler_cfg[axis].input_size, 1])
+            motor_signal = noise + MotorController.generate_motor_signals(base_throttle, pitch_cmd, roll_cmd, yaw_cmd)
+
+            # -----------------------------------
+            # Generate a new NN input
+            # -----------------------------------
+            # Roll the time history backwards so that the oldest value pops up at the latest index
+
+            if input_shape[1] > input_shape[2]: # [time steps x input dim]
+                model_input_series = np.roll(model_input_series, -1, axis=0)
+                model_input_series[-1, :] = motor_signal[:, 0].transpose()
+
+            else:  # [input dim x time steps]
+                model_input_series = np.roll(model_input_series, -1, axis=1)
+                model_input_series[:, -1] = motor_signal[:, 0]
+
+            # Map the input data into the range expected by the NN
+            mapped_model_input_series = self._real_motor_data_to_mapped(model_input_series)
+            model_cmd_log[:, current_step] = self._real_motor_data_to_mapped(motor_signal)[:, 0]
+
+            # -----------------------------------
+            # Predict new Euler/Gyro outputs
+            # -----------------------------------
+            # Expand so that the 0th axis tells the NN what our batch size is: aka 1.
+            model_input = np.expand_dims(mapped_model_input_series, axis=0)
+
+            euler_prediction = self._euler_model[axis].predict(model_input)
+            euler_output[0, current_step] = euler_prediction[0]
+
+            if enable_rate_control:
+                gyro_prediction = self._gyro_model[rate_axis].predict(model_input)
+                gyro_output[0, current_step] = gyro_prediction[0]
+
+                if invert_rate_direction:
+                    gyro_output[0, current_step] *= -1.0
+
+
+
+            # Update sim vars
+            current_step += 1
+            current_time += self._sim_dt
+
+        tick_end = time.perf_counter()
+        elapsed_time = tick_end - tick_start
+        print("Total Time: ", elapsed_time)
+
+        results = {'euler_output': euler_output,
+                   'gyro_output': gyro_output,
+                   'model_input': model_cmd_log,
+                   'signal_input': in_sig_cmd_log,
+                   'time': time_history}
+
+        return results
 
     def simulate_pitch_step(self, start_time, end_time, step_input_delta, step_ON_pct=0.5):
         num_sim_steps = int(np.ceil((end_time-start_time)/self._sim_dt))
@@ -383,14 +615,22 @@ class DroneModel:
         return self._matlab_engine.CalculateStepPerformance(input_mdt, time_mdt, expected_final_value)
 
     def TESTFUNC(self):
-        print(np.interp(1460,
-                        [self.motor_range_actual_min, self.motor_range_actual_max],
-                        [self.motor_range_mapped_min, self.motor_range_mapped_max]))
 
-        print("Test of vector interpolation")
-        print(np.interp([[-2000, -1000, 0.0, 100, 1000, 2000], [-2000, -1000, 0.0, 100, 1000, 2000]],
-                        [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
-                        [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped]))
+        end = 2000
+        test_sig = np.zeros([1, end])
+        test_sig[0, 500:end] = 2.5
+
+
+        results = self._simulate_axis(axis='pitch', input_sig=test_sig, t_start=0.0, t_end=end*self._sim_dt)
+
+        lw = 0.8
+        plt.figure(figsize=(32, 18))
+        plt.suptitle('Pitch Angle Step Test')
+        plt.plot(results['time'], results['euler_output'][0, :], 'g-', label='Output', linewidth=lw)
+        plt.plot(results['time'], results['signal_input'][0, :], 'b-', label='Input', linewidth=lw)
+        plt.legend()
+        plt.show()
+
 
     def set_pitch_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
         self._pitch_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
@@ -431,6 +671,41 @@ class DroneModel:
                                self._yaw_ctrl.rateController.ki,
                                self._yaw_ctrl.rateController.kd]})
 
+    # ---------------------------------------------
+    # Private Methods
+    # ---------------------------------------------
+    def _generate_model(self, config=None):
+        """
+        A factory function to generate a system model based upon config object
+        """
+        if config.data_inversion:
+            model_input_shape = [None, config.input_size, config.input_depth]
+        else:
+            model_input_shape = [None, config.input_depth, config.input_size]
+
+        # Grab the particular model function in use
+        assert (isinstance(config.model_type, str))
+        if config.model_type in TFModels.function_dispatcher:
+            model_func = TFModels.function_dispatcher[config.model_type]
+        else:
+            raise ValueError(bcolors.FAIL + 'Invalid model type!' + bcolors.ENDC)
+
+        # All models are guaranteed to have this input form. No checkpoint paths
+        # are specified because this model will never be used for training.
+        return model_func(shape=model_input_shape,
+                          dim_in=config.input_size,
+                          dim_out=config.output_size,
+                          past_depth=config.input_depth,
+                          layer_neurons=config.neurons_per_layer,
+                          layer_dropout=config.layer_dropout,
+                          learning_rate=config.learning_rate)
+
+    def _predict_model(self, model_key=None, input_sig=None):
+        if model_key in self._euler_model:
+            return self._euler_model[model_key].predict(input_sig)
+        elif model_key in self._gyro_model:
+            return self._gyro_model[model_key].predict(input_sig)
+
     def _smooth_raw_output(self):
         """
         Implements a smoothing filter so that we don't have so much noise to
@@ -442,30 +717,30 @@ class DroneModel:
     def _parse_model_config(self):
         raise NotImplementedError
 
-    def _step_pitch_controller(self, angle_setpoint, angle_feedback, rate_feedback):
+    def _step_pitch_controller(self, angle_setpoint, angle_feedback, rate_feedback, en_rate_ctrl=False):
         self._pitch_ctrl.angle_setpoint = angle_setpoint
         self._pitch_ctrl.angle_feedback = angle_feedback
         self._pitch_ctrl.rate_feedback = rate_feedback
 
-        self._pitch_ctrl.compute()
+        self._pitch_ctrl.compute(en_rate_ctrl)
 
         return self._pitch_ctrl.controller_output
 
-    def _step_roll_controller(self, angle_setpoint, angle_feedback, rate_feedback):
+    def _step_roll_controller(self, angle_setpoint, angle_feedback, rate_feedback, en_rate_ctrl=False):
         self._roll_ctrl.angle_setpoint = angle_setpoint
         self._roll_ctrl.angle_feedback = angle_feedback
         self._roll_ctrl.rate_feedback = rate_feedback
 
-        self._roll_ctrl.compute()
+        self._roll_ctrl.compute(en_rate_ctrl)
 
         return self._roll_ctrl.controller_output
 
-    def _step_yaw_controller(self, angle_setpoint, angle_feedback, rate_feedback):
+    def _step_yaw_controller(self, angle_setpoint, angle_feedback, rate_feedback, en_rate_ctrl=False):
         self._yaw_ctrl.angle_setpoint = angle_setpoint
         self._yaw_ctrl.angle_feedback = angle_feedback
         self._yaw_ctrl.rate_feedback = rate_feedback
 
-        self._yaw_ctrl.compute()
+        self._yaw_ctrl.compute(en_rate_ctrl)
 
         return self._yaw_ctrl.controller_output
 
@@ -491,4 +766,36 @@ class DroneModel:
 
 
 if __name__ == "__main__":
-    print('Hello')
+    cfg = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/config.csv'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/training/best_results/pitch_full_ver1592726'
+
+    data = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
+
+    # test = ModelInferencer(config_path=cfg, model_checkpoint=ckpt, data_path=data)
+    # test.setup()
+    #
+    # fileNum = 0
+    # yp, yt = test.predict(test.model_inferencing_files[1])
+    # score = test.evaluate(test.model_inferencing_files[1])
+    # print(score)
+    #
+    # lw = 0.8
+    # plt.figure(figsize=(32, 18))
+    # plt.suptitle('Validation Data Predictions')
+    # plt.plot(yt[:, 0], 'g--', label='Ground Truth', linewidth=lw)
+    # plt.plot(yp[:, 0], 'r-', label='Prediction', linewidth=2 * lw)
+    # plt.legend()
+    # plt.savefig('validateNum'+str(fileNum)+'.png')
+
+    model = DroneModel(euler_cfg_dict={'pitch': cfg},
+                       euler_mdl_dict={'pitch': ckpt})
+
+    model.initialize(500, 250)
+    model.set_roll_ctrl_pid(2.0, 2.0, 1.2, 0.9, 2.5, 0.01)
+    model.set_pitch_ctrl_pid(12.0, 2.0, 1.2, 0.9, 2.5, 0.01)
+
+    model.TESTFUNC()
+
+
+
+

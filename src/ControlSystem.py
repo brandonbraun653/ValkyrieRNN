@@ -43,7 +43,7 @@ class AxisController:
 
         # Set up the Rate Control PID Object
         self.rateController = PID(lambda: self.rate_feedback,           # Feedback from GYRO of actual rate
-                                  self._update_controller_output,        # Output into the NN
+                                  self._update_controller_output,       # Output into the NN
                                   self._angular_rate_desired,           # Initial Condition
                                   0.0,
                                   0.0,
@@ -99,14 +99,15 @@ class AxisController:
     def update_rate_pid(self, kp, ki, kd):
         self.rateController.set_tunings(kp, ki, kd)
 
-    def compute(self):
+    def compute(self, use_rate_control=False):
         self.angleController.setpoint = self.angle_setpoint
         self.angleController.compute()
 
-        # self.rateController.setpoint = self.angular_rate_desired
-        # self.rateController.compute()
-
-        self._motor_cmd_output = self.angular_rate_desired
+        if use_rate_control:
+            self.rateController.setpoint = self.angular_rate_desired
+            self.rateController.compute()
+        else:
+            self._update_controller_output(self.angular_rate_desired)
 
 
 

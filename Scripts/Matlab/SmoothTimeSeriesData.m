@@ -53,9 +53,9 @@ inference_smoothedData = [rawData(:,1), smoothdata(rawData(:,2:end))];
 
 
 % Normalize and scale the motor command data
-motor = rawData(:,M1_INDEX:M4_INDEX) - motorMin;
-motor(motor<0) = 0;
-motor = motor./motorRange;
+% motor = rawData(:,M1_INDEX:M4_INDEX) - motorMin;
+% motor(motor<0) = 0;
+% motor = motor./motorRange;
 
 % Normalize gyro over [-1,1] range and then scale
 % gyro = rawData(:,GX_INDEX:GZ_INDEX) + gyroMax;
@@ -67,9 +67,11 @@ gyro = gyro - dc_offset;
 
 
 % Recreate the data
-norm_filteredData = [rawData(:,TICK_INDEX:AZ_INDEX), gyro,...
-                       rawData(:,MX_INDEX:MZ_INDEX), motor,...
-                       rawData(:,ASP_INDEX:end)];
+norm_filteredData = [rawData(:,TICK_INDEX:AZ_INDEX),...
+                     gyro,...
+                     rawData(:,MX_INDEX:MZ_INDEX),...
+                     rawData(:,M1_INDEX:M4_INDEX),...
+                     rawData(:,ASP_INDEX:end)];
    
 norm_smoothedData = [norm_filteredData(:,1), smoothdata(norm_filteredData(:,2:end))];
 

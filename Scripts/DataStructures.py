@@ -127,8 +127,8 @@ class SDLogMotor:
 
 class SDLogAngleSetpoint:
     def __init__(self):
-        self.structSizeInBytes = 7
-        self.dataFormatString = 'IBBB'
+        self.structSizeInBytes = 16
+        self.dataFormatString = 'Ifff'
         self.rawData = ()
 
         # Number of freeRTOS ticks elapsed @ measurement
@@ -158,8 +158,8 @@ class SDLogAngleSetpoint:
 
 class SDLogRateSetpoint:
     def __init__(self):
-        self.structSizeInBytes = 10
-        self.dataFormatString = 'IHHH'
+        self.structSizeInBytes = 16
+        self.dataFormatString = 'Ifff'
         self.rawData = ()
 
         # Number of freeRTOS ticks elapsed @ measurement

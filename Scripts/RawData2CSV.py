@@ -1,35 +1,80 @@
 from Scripts import DataStructures
 from src.Miscellaneous import bcolors
-from collections import OrderedDict
 
 import os
 import pandas as pd
 import numpy as np
 import matlab.engine
+import matplotlib; matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+from glob import glob
+from shutil import copyfile
+from scipy.signal import savgol_filter
 
 matlab_smoothTimeSeriesFile = "SmoothTimeSeriesLog.m"
-
-input_ahrsLogFile_minimal   = "DroneData/raw/ahrsLogMinimal.dat"
-input_ahrsLogFile_full      = "DroneData/raw/ahrsLogFull.dat"
-input_motorLogFile          = "DroneData/raw/motorLog.dat"
-input_angleSetpointLogFile  = "DroneData/raw/angleSetpoints.dat"
-input_rateSetpointLogFile   = "DroneData/raw/rateSetpoints.dat"
-
-output_ahrsCSVFile          = "DroneData/csv/ahrsLog.csv"
-output_motorCSVFile         = "DroneData/csv/motorLog.csv"
-output_angleSetpointCSVFile = "DroneData/csv/angleSetpoints.csv"
-output_rateSetpointCSVFile  = "DroneData/csv/rateSetpoints.csv"
-output_TSBlankSpaceCSVFile  = "DroneData/csv/timeSeriesDataRaw.csv"
-output_TSInterpCSVFIle      = "DroneData/csv/timeSeriesDataInterpolated.csv"
 
 header_timeSeriesCSV = "rtosTick,pitch,roll,yaw," + \
                        "ax,ay,az,gx,gy,gz,mx,my,mz," +\
                        "m1CMD,m2CMD,m3CMD,m4CMD," +\
                        "asp,asr,asy,rsp,rsr,rsy\n"
 
+motor_max = 1650
+motor_min = 1060
+gyro_symmetric_range = 250
+ahrs_max = 30
+ahrs_min = -30
+
+mapped_motor_max = 1.0
+mapped_motor_min = 0.0
+mapped_gyro_symmetric_range = 1.0
+mapped_ahrs_max = 1.0
+mapped_ahrs_min = -1.0
+
+AHRS_UPDATE_FREQ = 500
+PID_UPDATE_FREQ = 125
+
+
+# TODO: Eventually fill this out for all input types
+class MotorCommandConverter:
+    def __init__(self, base_path):
+        pass
+
+    def dat2csv(self, input_dir, output_dir, filename):
+        try:
+            input_motor_file = input_dir + filename
+            output_motor_csv_file = output_dir + filename
+
+            if not os.path.exists(output_motor_csv_file):
+                os.makedirs(output_motor_csv_file)
+
+            raw_motor_data = []
+            input_file_size = os.path.getsize(input_motor_file)
+
+            with open(input_motor_file, "rb") as input_file:
+                bytes_read = 0
+
+                while bytes_read < input_file_size:
+                    measurement = DataStructures.SDLogMotor()
+                    measurement.unpack_raw_hex(input_file.read(measurement.structSizeInBytes))
+                    raw_motor_data.append(measurement)
+                    bytes_read += measurement.structSizeInBytes
+
+                # Write all the measurements to a csv file for processing later
+                with open(output_motor_csv_file, 'w') as output_file:
+                    [output_file.write(raw_motor_data[x].as_csv()) for x in range(len(raw_motor_data))]
+
+            print("Done parsing Motor log file.")
+
+        except:
+            print("Motor file doesn't exist. Continuing on.")
+
+    def _interpolate(self):
+        pass
+
 
 class DataConverter:
-    def __init__(self, base_path, raw_path, csv_path, matlab_path):
+    def __init__(self, raw_path, csv_path, matlab_path):
         """
         Instruct the conversion module where to find all the relevant information
         :param base_path: Root directory for all data
@@ -37,13 +82,23 @@ class DataConverter:
         :param csv_path: Directory for placing csv results
         :param matlab_path: Directory containing matlab scripts
         """
-        self._base_path = base_path
         self._raw_path = raw_path
         self._csv_path = csv_path
         self._matlab_path = matlab_path
 
         self._raw_dat_filenames = []
         self.data_folders = []
+
+        self.gyro_symmetric_range_actual = gyro_symmetric_range         # The actual +/- data range recorded by the gyro
+        self.gyro_symmetric_range_mapped = mapped_gyro_symmetric_range  # The desired +/- data range input for the NN
+        self.motor_range_actual_max = motor_max                         # ESC input max throttle signal in mS
+        self.motor_range_actual_min = motor_min                         # ESC input min throttle signal in mS
+        self.motor_range_mapped_max = mapped_motor_max                  # NN input max throttle signal (unitless)
+        self.motor_range_mapped_min = mapped_motor_min                  # NN input min throttle signal (unitless)
+        self.ahrs_range_actual_min = ahrs_min
+        self.ahrs_range_actual_max = ahrs_max
+        self.ahrs_range_mapped_min = mapped_ahrs_min
+        self.ahrs_range_mapped_max = mapped_ahrs_max
 
     def add_dat_filenames(self, filenames):
         self._raw_dat_filenames = filenames
@@ -57,7 +112,7 @@ class DataConverter:
         interpret CSV files
         """
         for folder in self.data_folders:
-            print(bcolors.OKGREEN + 'Changing directory to: ' + self._raw_path+folder + bcolors.ENDC)
+            print(bcolors.OKGREEN + 'Changing directory to: ' + self._raw_path + folder + bcolors.ENDC)
             for file in self._raw_dat_filenames:
                 # ----------------------
                 # Parse the AHRS data
@@ -221,7 +276,7 @@ class DataConverter:
 
                     file.write(line)
 
-        print(bcolors.OKBLUE + "Starting creation of time series log file..." + bcolors.ENDC)
+        print(bcolors.OKBLUE + "------------Starting creation of time series log file------------" + bcolors.ENDC)
         for folder in self.data_folders:
             print(bcolors.OKGREEN + 'Changing directory to: ' + self._raw_path + folder + bcolors.ENDC)
 
@@ -244,7 +299,7 @@ class DataConverter:
             my_col = 11
             mz_col = 12
 
-            update_rate_ms = 8
+            update_rate_ms = int(1000.0/PID_UPDATE_FREQ)
 
             motor_csv_file          = self._csv_path + folder + 'motorLog.csv'
             ahrs_csv_file           = self._csv_path + folder + 'ahrsLog.csv'
@@ -301,7 +356,7 @@ class DataConverter:
             else:
                 rate_setpoint_data_valid = False
 
-            if all_recorded_ticks is None:
+            if np.size(all_recorded_ticks) == (1, 1):
                 print("No available data for this round. Continuing to next folder...")
                 continue
 
@@ -385,18 +440,33 @@ class DataConverter:
                 keys = list(time_series_data.keys())
                 keys.sort(key=int)
 
-                for idx in range(0, len(keys)-1):
+                for idx in range(0, len(keys)):
                     tic = keys[idx]
 
                     if np.sum(np.array(time_series_data[tic]['ahrsMeas'])) == 0:
                         current_idx = idx
                         num_tics = 1
 
+                        # ---------------------------
                         # Find the next non zero tic
+                        # ---------------------------
+                        eof = False
+                        max_len = len(time_series_data)
                         while time_series_data[keys[current_idx]]['ahrsMeas'][0] == 0.0:
                             num_tics += 1
                             current_idx += 1
 
+                            # Reached end of data with no value update. Move on to the next controller
+                            if current_idx == max_len:
+                                eof = True
+                                break
+
+                        if eof:
+                            continue
+
+                        # ---------------------------
+                        # Assuming a non-zero value was found...
+                        # ---------------------------
                         # Generate the delta for each zero'd field
                         ahrs_prev = np.array(time_series_data[keys[idx - 1]]['ahrsMeas'])
                         ahrs_next = np.array(time_series_data[keys[current_idx]]['ahrsMeas'])
@@ -452,8 +522,8 @@ class DataConverter:
                 keys.sort(key=int)
 
                 for controller in range(0, 3):
-                    last_valid_cmd = 0
-                    last_valid_key = 0
+                    last_valid_cmd = time_series_data[keys[0]]['angleSet'][controller]
+                    last_valid_key = keys[0]
 
                     for idx in range(0, len(keys)):
                         current_key = keys[idx]
@@ -462,14 +532,15 @@ class DataConverter:
                         dt = current_key - last_valid_key
 
                         # Not enough time has passed to change command
-                        if dt % update_rate_ms == 0 and current_cmd != last_valid_cmd:
+                        if (dt % update_rate_ms == 0) and (current_cmd != last_valid_cmd):
                             last_valid_key = current_key
+                            #last_valid_cmd = current_cmd
 
                             # Check the next value...if they are the same, accept the input
                             if (current_key + update_rate_ms) in keys:
                                 next1 = time_series_data[current_key + update_rate_ms]['angleSet'][controller]
-
-                                if next1 == current_cmd:
+                                next2 = time_series_data[current_key + 2*update_rate_ms]['angleSet'][controller]
+                                if (next1 == current_cmd) and (next2 == current_cmd):
                                     last_valid_cmd = current_cmd
 
                         time_series_data[keys[idx]]['angleSet'][controller] = last_valid_cmd
@@ -480,8 +551,8 @@ class DataConverter:
                 keys.sort(key=int)
 
                 for controller in range(0, 3):
-                    last_valid_cmd = 0
-                    last_valid_key = 0
+                    last_valid_cmd = time_series_data[keys[0]]['rateSet'][controller]
+                    last_valid_key = keys[0]
 
                     for idx in range(0, len(keys)):
                         current_key = keys[idx]
@@ -507,59 +578,184 @@ class DataConverter:
 
             print("Done")
 
-    def smooth_time_series_data(self, gyro_max, gyro_min, motor_max, motor_min):
+    def smooth_scale_data(self, output_data_dir=None, output_data_filename=None):
         """
         Uses several matlab specific commands to smooth out the time series data. Currently
         hardcoded for simplicity
+
+        :param output_data_dir: directory where to dump all results
+        :param output_data_filename: filename to use, without extension
         :return:
         """
-        assert(np.isscalar(gyro_max))
-        assert(np.isscalar(gyro_min))
-        assert(np.isscalar(motor_max))
-        assert(np.isscalar(motor_min))
 
-        print("Starting Matlab Engine")
-        eng = matlab.engine.start_matlab()
-        eng.addpath(self._matlab_path, nargout=0)
-
-        print("Executing data smoother")
+        print(bcolors.OKGREEN + '-------------Smoothing and Scaling Data-------------' + bcolors.ENDC)
+        file_num = 0
         for folder in self.data_folders:
-            print(bcolors.OKGREEN + 'Changing directory to: ' + self._raw_path + folder + bcolors.ENDC)
-            eng.SmoothTimeSeriesData(self._csv_path + folder + 'timeSeriesDataInterpolated.csv',
-                                     self._csv_path + folder,
-                                     float(gyro_max),
-                                     float(gyro_min),
-                                     float(motor_max),
-                                     float(motor_min),
-                                     nargout=0)
-        print("Done")
+            folder = self._csv_path + folder
+
+            print(bcolors.OKGREEN + 'Changing directory to: ' + folder + bcolors.ENDC)
+
+            in_file = folder + 'timeSeriesDataInterpolated.csv'
+
+            # Sometimes the file that exists is empty, so check file size before continuing
+            if os.path.getsize(in_file) < 1024:
+                print(bcolors.WARNING + 'File empty, skipping' + bcolors.ENDC)
+                continue
+
+            full_data = pd.read_csv(in_file)
+            header = list(full_data)
+            header.remove('rtosTick')
+
+            # ----------------------------------
+            # First smooth out all the data
+            # ----------------------------------
+            for key in header:
+                val = np.array(full_data[key]).reshape(-1, 1)
+                val_smoothed = savgol_filter(val, window_length=251, polyorder=3, axis=0)
+                full_data[key] = pd.Series(val_smoothed[:, 0])
+
+            # Save smoothed data for sanity checks later if desired
+            full_data.to_csv(folder + 'timeSeriesDataSmoothed.csv')
+
+            # ----------------------------------
+            # Now map and scale the data appropriately
+            # ----------------------------------
+            for key in ['pitch', 'roll']:
+                val = np.array(full_data[key]).reshape(-1, 1)
+
+                if not val.min(axis=0) > ahrs_min:
+                    print(bcolors.WARNING + 'MIN exceeded for AHRS. Resetting.' + bcolors.ENDC)
+                    val[val < ahrs_min] = ahrs_min
+
+                if not val.max(axis=0) < ahrs_max:
+                    print(bcolors.WARNING + 'MAX exceeded for AHRS. Resetting.' + bcolors.ENDC)
+                    val[val > ahrs_max] = ahrs_max
+
+                val_scaled = self._real_ahrs_data_to_mapped(val)
+                full_data[key] = pd.Series(val_scaled[:, 0])
+
+            for key in ['m1CMD', 'm2CMD', 'm3CMD', 'm4CMD']:
+                val = np.array(full_data[key]).reshape(-1, 1)
+
+                if not val.min(axis=0) > motor_min:
+                    print(bcolors.WARNING + 'MIN exceeded for MOTOR ' + key + '. Resetting.' + bcolors.ENDC)
+                    val[val < motor_min] = motor_min
+
+                if not val.max(axis=0) < motor_max:
+                    print(bcolors.WARNING + 'MAX exceeded for MOTOR ' + key + '. Resetting.' + bcolors.ENDC)
+                    val[val > motor_max] = motor_max
+
+                val_scaled = self._real_motor_data_to_mapped(val)
+                full_data[key] = pd.Series(val_scaled[:, 0])
+
+            for key in ['gx', 'gy', 'gz']:
+                val = np.array(full_data[key]).reshape(-1, 1)
+                val = val - np.mean(val, axis=0)
+
+                if not val.min(axis=0) > -gyro_symmetric_range:
+                    print(bcolors.WARNING + 'MIN exceeded for GYRO. Resetting.' + bcolors.ENDC)
+                    val[val < -gyro_symmetric_range] = -gyro_symmetric_range
+
+                if not val.max(axis=0) < gyro_symmetric_range:
+                    print(bcolors.WARNING + 'MAX exceeded for GYRO. Resetting.' + bcolors.ENDC)
+                    val[val > gyro_symmetric_range] = gyro_symmetric_range
+
+                val_scaled = self._real_gyro_data_to_mapped(val)
+                full_data[key] = pd.Series(val_scaled[:, 0])
+
+            # ----------------------------------
+            # Save to the local folder as well as the training directory
+            # ----------------------------------
+            full_data.to_csv(folder + 'timeSeriesDataTraining.csv')
+
+            source = folder + 'timeSeriesDataTraining.csv'
+            destination = output_data_dir + output_data_filename + str(file_num) + '.csv'
+
+            if not os.path.exists(output_data_dir):
+                os.mkdir(output_data_dir)
+
+            copyfile(source, destination)
+            file_num += 1
+
+        print(bcolors.OKGREEN + 'Done' + bcolors.ENDC)
+
+    def _mapped_gyro_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped],
+                         [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual])
+
+    def _real_gyro_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [-self.gyro_symmetric_range_actual, self.gyro_symmetric_range_actual],
+                         [-self.gyro_symmetric_range_mapped, self.gyro_symmetric_range_mapped])
+
+    def _mapped_motor_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [self.motor_range_mapped_min, self.motor_range_mapped_max],
+                         [self.motor_range_actual_min, self.motor_range_actual_max])
+
+    def _real_motor_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [self.motor_range_actual_min, self.motor_range_actual_max],
+                         [self.motor_range_mapped_min, self.motor_range_mapped_max])
+
+    def _real_ahrs_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [self.ahrs_range_actual_min, self.ahrs_range_actual_max],
+                         [self.ahrs_range_mapped_min, self.ahrs_range_mapped_max])
+
+    def _mapped_ahrs_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [self.ahrs_range_mapped_min, self.ahrs_range_mapped_max],
+                         [self.ahrs_range_actual_min, self.ahrs_range_actual_max])
 
 
 if __name__ == "__main__":
+    build_training_data = False
+    build_validation_data = False
+    build_control_data = True
 
-    parser = DataConverter(base_path='G:/Projects/ValkyrieRNN/Data/',
-                           raw_path='G:/Projects/ValkyrieRNN/Data/raw/',
-                           csv_path='G:/Projects/ValkyrieRNN/Data/csv/',
-                           matlab_path=r'C:/git/GitHub/ValkyrieRNN/Scripts/Matlab/')
+    raw_dir = ''
+    csv_dir = ''
+    folder_names = []
+    output_dir = ''
+    output_filename = ''
+    mlab_dir = r'C:/git/GitHub/ValkyrieRNN/Scripts/Matlab/'
+
+    if build_training_data:
+        raw_dir = 'G:/Projects/ValkyrieRNN/Data/raw/'
+        csv_dir = 'G:/Projects/ValkyrieRNN/Data/csv/'
+
+        all_folder_dir = glob(raw_dir + '*/')
+        folder_names = [x.replace('G:/Projects/ValkyrieRNN/Data/raw\\', '') for x in all_folder_dir]
+
+        output_dir = 'G:\\Projects\\ValkyrieRNN\\Data\\TrainingData\\'
+        output_filename = 'timeSeriesDataTraining'
+
+    if build_validation_data:
+        # TODO: Fill in the other stuff
+        output_dir = 'G:\\Projects\\ValkyrieRNN\\Data\\ValidationData\\'
+        output_filename = 'timeSeriesDataValidation'
+
+    if build_control_data:
+        raw_dir = 'G:/Projects/ValkyrieRNN/Data/ControlSystemTests/raw/'
+        csv_dir = 'G:/Projects/ValkyrieRNN/Data/ControlSystemTests/csv/'
+
+        all_folder_dir = glob(raw_dir + '*/')
+        folder_names = [x.replace('G:/Projects/ValkyrieRNN/Data/ControlSystemTests/raw\\', '') for x in all_folder_dir]
+
+        output_dir = 'G:\\Projects\\ValkyrieRNN\\Data\\ControlSystemTests\\Output\\'
+        output_filename = 'timeSeriesDataControlLog'
+
+    parser = DataConverter(raw_path=raw_dir,
+                           csv_path=csv_dir,
+                           matlab_path=mlab_dir)
 
     parser.add_dat_filenames(['ahrsLogFull.dat', 'angleSetpoints.dat', 'motorLog.dat', 'rateSetpoints.dat'])
-    # parser.add_dat_folders(['stepping_5_deg_coupled/',
-    #                         'stepping_5_deg_uncoupled/',
-    #                         'stepping_10_deg_coupled/',
-    #                         'stepping_10_deg_uncoupled/',
-    #                         'stepping_15_deg_coupled/',
-    #                         'stepping_15_deg_uncoupled/',
-    #                         'disturbances/'])
+    parser.add_dat_folders(folder_names)
 
-    parser.add_dat_folders(['general_dump/'])
     parser.raw_data_2_csv()
     parser.create_time_series_from_csv_logs()
 
-    gyro_max = 250
-    gyro_min = -250
-    motor_max = 1650
-    motor_min = 1060
-    parser.smooth_time_series_data(gyro_max=gyro_max,
-                                   gyro_min=gyro_min,
-                                   motor_max=motor_max,
-                                   motor_min=motor_min)
+    parser.smooth_scale_data(output_data_dir=output_dir,
+                             output_data_filename=output_filename)

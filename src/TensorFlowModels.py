@@ -340,6 +340,75 @@ def drone_lstm_model_shallow(shape, dim_in, dim_out, past_depth, layer_neurons=1
                        tensorboard_dir=log_dir)
 
 
+def drone_lstm_model_shallow_sandbox(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+                                     learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                                     log_dir='/tmp/tflearn_logs/'):
+    input_layer = tflearn.input_data(shape=shape)
+
+    hidden_layers = tflearn.lstm(input_layer,
+                                 n_units=layer_neurons,
+                                 return_seq=False,
+                                 dropout=layer_dropout)
+
+    hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    # hidden_layers = tflearn.lstm(hidden_layers,
+    #                              n_units=layer_neurons,
+    #                              return_seq=False,
+    #                              dropout=layer_dropout)
+    #
+    # hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    hidden_layers = tflearn.fully_connected(hidden_layers, n_units=dim_out)
+
+    output_layer = tflearn.regression(hidden_layers,
+                                      optimizer='adam',
+                                      loss='mean_square',
+                                      metric=tflearn.metrics.R2(),
+                                      learning_rate=learning_rate)
+
+    return tflearn.DNN(output_layer,
+                       tensorboard_verbose=3,
+                       checkpoint_path=checkpoint_path,
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
+
+
+def drone_lstm_model_shallow_sandbox2(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
+                                     learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
+                                     log_dir='/tmp/tflearn_logs/'):
+    input_layer = tflearn.input_data(shape=shape)
+
+    hidden_layers = tflearn.lstm(input_layer,
+                                 n_units=layer_neurons,
+                                 return_seq=True,
+                                 dropout=layer_dropout)
+
+    hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    hidden_layers = tflearn.lstm(hidden_layers,
+                                 n_units=layer_neurons,
+                                 return_seq=False,
+                                 dropout=layer_dropout)
+
+    hidden_layers = tflearn.dropout(hidden_layers, keep_prob=0.5)
+
+    hidden_layers = tflearn.fully_connected(hidden_layers, n_units=dim_out)
+
+    output_layer = tflearn.regression(hidden_layers,
+                                      optimizer='adam',
+                                      loss='mean_square',
+                                      metric=tflearn.metrics.R2(),
+                                      learning_rate=learning_rate)
+
+    return tflearn.DNN(output_layer,
+                       tensorboard_verbose=3,
+                       checkpoint_path=checkpoint_path,
+                       best_checkpoint_path=best_checkpoint_path,
+                       tensorboard_dir=log_dir)
+
+
+
 def drone_lstm_model_deep(shape, dim_in, dim_out, past_depth, layer_neurons=128, layer_dropout=1.0,
                           learning_rate=0.001, checkpoint_path='', best_checkpoint_path='',
                           log_dir='/tmp/tflearn_logs/'):
@@ -466,7 +535,9 @@ function_dispatcher = {'drone_rnn_model': drone_rnn_model,
                        'drone_lstm_model_deep': drone_lstm_model_deep,
                        'drone_lstm_deeply_connected': drone_lstm_deeply_connected,
                        'drone_lstm_sandbox1': drone_lstm_sandbox1,
-                       'drone_gru_sandbox1': drone_gru_sandbox1}
+                       'drone_gru_sandbox1': drone_gru_sandbox1,
+                       'drone_lstm_model_shallow_sandbox': drone_lstm_model_shallow_sandbox,
+                       'drone_lstm_model_shallow_sandbox2': drone_lstm_model_shallow_sandbox2}
 
 if __name__ == '__main__':
     pass

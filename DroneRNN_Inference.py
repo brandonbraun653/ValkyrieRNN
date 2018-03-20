@@ -112,7 +112,7 @@ if __name__ == "__main__":
         euler_data, gyro_data, setpoint_data, motor_history = \
             sys.simulate_pitch_step(step_input_delta=step_mag, step_enable_t0=10, num_sim_steps=sim_len)
 
-        system_performance = sys.analyze_step_performance_siso(input_data=euler_data[0, :],
+        system_performance = sys.analyze_step_performance_siso(x=euler_data[0, :],
                                                                expected_final_value=step_mag,
                                                                start_time=sim_start_time,
                                                                end_time=sim_end_time)

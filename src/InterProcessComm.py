@@ -35,3 +35,13 @@ class TCPSocket:
 
     def send(self, data_str):
         self._connection.send(data_str.encode('utf-8'))
+
+if __name__ == "__main__":
+    import json
+    from pprint import pprint
+
+    data = json.load(open('C:\\Users\\Valkyrie\\Desktop\\TEMP\\data.json'))
+    pprint(data)
+
+    print(data["timeRise"])
+    print(data['pi'])

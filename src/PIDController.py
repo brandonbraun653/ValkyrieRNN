@@ -2,6 +2,9 @@ import numpy as np
 
 
 class PID(object):
+    DIRECT = False
+    REVERSE = True
+
     def __init__(self, input, output, setpoint, kp, ki, kd, direct):
         """
 
@@ -43,7 +46,7 @@ class PID(object):
 
         self.set_output_limits(0, 255)
         self.sample_time = 100  # milliseconds
-        self.direct = direct
+        self.controller_direction = direct
         self.set_tunings(kp, ki, kd)
 
     def initialize(self):
@@ -66,14 +69,14 @@ class PID(object):
         elif self._output_sum < self._out_min:
             self._output_sum = self._out_min
 
-        output = (self._kp * error) + self._output_sum - (self._kd * dInput)
+        self.output_value = self._kp * error
 
-        if output > self._out_max:
-            output = self._out_max
-        elif output < self._out_min:
-            output = self._out_min
+        if self.output_value > self._out_max:
+            self.output_value = self._out_max
+        elif self.output_value < self._out_min:
+            self.output_value = self._out_min
 
-        self.output_value = output
+        self.output_value += self._output_sum - (self._kd * dInput)
 
         self._last_input = input_value
         return True
@@ -98,9 +101,9 @@ class PID(object):
         sample_time_in_sec = self.sample_time / 1000.0
         self._kp = kp
         self._ki = ki * sample_time_in_sec
-        self._kd = kd * sample_time_in_sec
+        self._kd = kd / sample_time_in_sec
 
-        if not self.direct:
+        if self.controller_direction == self.REVERSE:
             self._kp = 0 - self._kp
             self._ki = 0 - self._ki
             self._kd = 0 - self._kd
@@ -154,11 +157,11 @@ class PID(object):
         self._auto = new_auto
 
     @property
-    def direct(self):
+    def controller_direction(self):
         return self._direct
 
-    @direct.setter
-    def direct(self, value):
+    @controller_direction.setter
+    def controller_direction(self, value):
         if self.auto and value != self._direct:
             self._kp = 0 - self._kp
             self._ki = 0 - self._ki

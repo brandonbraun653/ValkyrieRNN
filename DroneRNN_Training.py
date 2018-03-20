@@ -48,7 +48,7 @@ def validate_plot_callback(valid_act, valid_pred):
 
 if __name__ == "__main__":
     # Global training paths
-    train_data_path = 'G:/Projects/ValkyrieRNN/Data/TrainingData/'
+    train_data_path = 'G:/Projects/ValkyrieRNN/Data/TrainingData/Gyro/'
     validation_data_path = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
     prediction_data_path = 'G:/Projects/ValkyrieRNN/Data/PredictionData/'
 
@@ -56,10 +56,10 @@ if __name__ == "__main__":
 
     # Generate the model configuration for a large training set
     cfg = TFModels.ModelConfig()
-    cfg.model_name = 'pitch_full_ver1'
-    cfg.model_type = 'drone_lstm_model_shallow'
+    cfg.model_name = 'gyro_y_full_ver2'
+    cfg.model_type = 'drone_lstm_model_shallow_sandbox2'
     cfg.input_size = 4      # Inputs are motor commands
-    cfg.input_depth = 300   # Multiply by 0.002 to get seconds represented
+    cfg.input_depth = 100   # Multiply by 0.002 to get seconds represented
     cfg.output_size = 1     # Outputs are pitch and roll angles
     cfg.batch_len = 128
     cfg.epoch_len = 3
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     cfg.max_cpu_cores = 16
     cfg.max_gpu_mem = 0.6
-    cfg.variable_scope = 'euler_pitch'
+    cfg.variable_scope = 'gyro_y'
     cfg.training_device = '/gpu:0'
 
     config_path = 'C:/git/GitHub/ValkyrieRNN/' + cfg.model_name + '.csv'
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                         results_path=results_root)
 
     in_keys = ['m1CMD', 'm2CMD', 'm3CMD', 'm4CMD']
-    out_keys = ['pitch'] #, 'roll']
+    out_keys = ['gy'] #, 'roll']
 
     temp.train_from_scratch(input_data_keys=in_keys, output_data_keys=out_keys,
                             training_plot_callback=train_plot_callback,

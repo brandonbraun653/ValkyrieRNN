@@ -27,11 +27,6 @@ def generate_motor_signals(pid_throttle, pid_pitch, pid_roll, pid_yaw):
     return sig
 
 
-def process_raw_motor_signals_for_rnn(motor_signal):
-    # Do some things here to scale from the huge output to a more sensible range
-    raise NotImplementedError
-
-
 if __name__ == "__main__":
     throttle = 1250
     pitch = -100

@@ -1,17 +1,11 @@
-
 from src.PIDController import PID
 
 
-class PIDInputs:
-    def __init__(self):
-        self._angle_fb = -1234
-
-    @property
-    def angle_fb(self):
-        return self._angle_fb
-
-
 class AxisController:
+    DIRECT = False
+    REVERSE = True
+
+
     """
     Models the control system found on the ValkyrieFCS flight controller. This
     consists of two PID loops, an inner loop controlling angular rates and an outer

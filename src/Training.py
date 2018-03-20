@@ -170,16 +170,6 @@ class ModelTrainer:
                     # ---------------------------------------
                     file_iteration += 1
 
-                # ---------------------------------------
-                # Print validation accuracies
-                # ---------------------------------------
-                plt.figure(figsize=(16, 4))
-                plt.suptitle('Training vs Validation Accuracy')
-                plt.plot(np.array(self.validation_accuracy), 'b-', label='Validation')
-                plt.plot(np.array(self.training_accuracy), 'g-', label='Training')
-                plt.legend()
-                plt.savefig(self._training_images_path + 'accuracyPlot.png')
-
     def _init_directories(self):
         """
         If a directory doesn't exist, create it. Otherwise, empty it of all files (not folders)

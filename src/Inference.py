@@ -2,7 +2,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import glob
 import time
+import json
 import tflearn
+
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -10,9 +12,11 @@ import matlab.engine
 import matplotlib; matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+import Scripts.RawData2CSV as Converter
 import src.TensorFlowModels as TFModels
 import src.MotorController as MotorController
 
+from pprint import pprint
 from src.DataHandling import DataHandler
 from src.ControlSystem import AxisController
 from src.Miscellaneous import bcolors
@@ -21,12 +25,30 @@ from Scripts.Matlab.MatlabIOHelper import matlab_matrix_to_numpy, numpy_matrix_t
 from src.TensorFlowModels import ModelConfig
 
 
-class StepResponseMetrics:
-    def __init__(self):
-        self.rise_time = 0
-        self.settling_time = 0
-        self.percent_overshoot = 0
-        self.steady_state_error = 0
+def is_locked(filepath):
+    """Checks if a file is locked by opening it in append mode.
+    If no exception thrown, then the file is not locked.
+    """
+    locked = None
+    file_object = None
+    if os.path.exists(filepath):
+        try:
+            print("Trying to open", filepath)
+            buffer_size = 8
+            # Opening file in append mode and read the first 8 characters.
+            file_object = open(filepath, 'a', buffer_size)
+            if file_object:
+                print(filepath, "is not locked.")
+                locked = False
+        except IOError:
+            print("File is locked (unable to open in append mode).")
+            locked = True
+        finally:
+            if file_object:
+                file_object.close()
+    else:
+        print(filepath, " not found.")
+    return locked
 
 
 class ModelInferencer(DataHandler):
@@ -196,12 +218,16 @@ class DroneModel:
         self._sim_dt = 0.002
 
         # TODO: Update these externally somehow
-        self.gyro_symmetric_range_actual = 250.0       # The actual +/- data range recorded by the gyro
-        self.gyro_symmetric_range_mapped = 1.0         # The desired +/- data range input for the NN
-        self.motor_range_actual_max = 1860             # ESC input max throttle signal in mS
-        self.motor_range_actual_min = 1060             # ESC input min throttle signal in mS
-        self.motor_range_mapped_max = 1.0              # NN input max throttle signal (unitless)
-        self.motor_range_mapped_min = 0.0              # NN input min throttle signal (unitless)
+        self.gyro_symmetric_range_actual = Converter.gyro_symmetric_range     # The actual +/- data range recorded by the gyro
+        self.gyro_symmetric_range_mapped = Converter.mapped_gyro_symmetric_range       # The desired +/- data range input for the NN
+        self.motor_range_actual_max = Converter.motor_max          # ESC input max throttle signal in mS
+        self.motor_range_actual_min = Converter.motor_min             # ESC input min throttle signal in mS
+        self.motor_range_mapped_max = Converter.mapped_motor_max             # NN input max throttle signal (unitless)
+        self.motor_range_mapped_min = Converter.mapped_motor_min             # NN input min throttle signal (unitless)
+        self.ahrs_range_actual_min = Converter.ahrs_min
+        self.ahrs_range_actual_max = Converter.ahrs_max
+        self.ahrs_range_mapped_min = Converter.mapped_ahrs_min
+        self.ahrs_range_mapped_max = Converter.mapped_ahrs_max
 
     def initialize(self, ahrs_sample_freq, pid_update_freq):
         self._pid_sample_time_mS = int((1.0 / pid_update_freq) * 1000.0)
@@ -236,9 +262,9 @@ class DroneModel:
         # -----------------------------
         # Setup the Matlab Engine
         # -----------------------------
-        # print(bcolors.OKGREEN + "Starting Matlab Engine" + bcolors.ENDC)
-        # self._matlab_engine = matlab.engine.start_matlab()
-        # self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
+        print(bcolors.OKGREEN + "Starting Matlab Engine" + bcolors.ENDC)
+        self._matlab_engine = matlab.engine.start_matlab()
+        self._matlab_engine.addpath(r'C:\git\GitHub\ValkyrieRNN\Scripts\Matlab', nargout=0)
 
         # -----------------------------
         # Setup the PID controllers
@@ -248,14 +274,14 @@ class DroneModel:
         print(bcolors.OKGREEN + "Initializing PID Controllers" + bcolors.ENDC)
         self._pitch_ctrl = AxisController(angular_rate_range=100.0,
                                           motor_cmd_range=500.0,
-                                          angle_direction=True,
-                                          rate_direction=True,
+                                          angle_direction=AxisController.REVERSE,
+                                          rate_direction=AxisController.REVERSE,
                                           sample_time_ms=self._pid_sample_time_mS)
 
         self._roll_ctrl = AxisController(angular_rate_range=100.0,
                                          motor_cmd_range=500.0,
-                                         angle_direction=False,
-                                         rate_direction=False,
+                                         angle_direction=AxisController.DIRECT,
+                                         rate_direction=AxisController.DIRECT,
                                          sample_time_ms=self._pid_sample_time_mS)
 
         self._yaw_ctrl = AxisController(angular_rate_range=100.0,
@@ -351,7 +377,9 @@ class DroneModel:
         current_time = 0.0
         last_time = 0.0
         while current_step < num_sim_steps:
-            print(bcolors.OKGREEN + 'Step ' + str(current_step) + ' of ' + str(num_sim_steps) + bcolors.ENDC)
+
+            if current_step % 100 == 0:
+                print(bcolors.OKGREEN + 'Step ' + str(current_step) + ' of ' + str(num_sim_steps) + bcolors.ENDC)
 
             # -----------------------------------
             # Generate a new motor signal
@@ -411,16 +439,14 @@ class DroneModel:
             model_input = np.expand_dims(mapped_model_input_series, axis=0)
 
             euler_prediction = self._euler_model[axis].predict(model_input)
-            euler_output[0, current_step] = euler_prediction[0]
+            euler_output[0, current_step] = self._mapped_ahrs_data_to_real(euler_prediction[0])
 
             if enable_rate_control:
                 gyro_prediction = self._gyro_model[rate_axis].predict(model_input)
-                gyro_output[0, current_step] = gyro_prediction[0]
+                gyro_output[0, current_step] = self._mapped_gyro_data_to_real(gyro_prediction[0])
 
                 if invert_rate_direction:
                     gyro_output[0, current_step] *= -1.0
-
-
 
             # Update sim vars
             current_step += 1
@@ -603,34 +629,146 @@ class DroneModel:
     def simulate_coupled_pitch_roll_step(self, step_size_pitch, step_size_roll, sim_length):
         raise NotImplementedError
 
-    def analyze_step_performance_siso(self, input_data, expected_final_value, start_time, end_time):
-        assert(input_data.ndim == 1)
+    def analyze_step_performance_siso(self, x, y, expected_final_value):
+        assert(x.ndim == 1)
         assert(np.isscalar(expected_final_value))
-        assert(np.isscalar(start_time))
-        assert(np.isscalar(end_time))
 
-        time_len = np.shape(input_data)
-        input_mdt = numpy_matrix_to_matlab(input_data)
-        time_mdt = numpy_matrix_to_matlab(np.linspace(start_time, end_time, time_len[0]))
+        input_mdt = numpy_matrix_to_matlab(x)
+        time_mdt = numpy_matrix_to_matlab(y)
         return self._matlab_engine.CalculateStepPerformance(input_mdt, time_mdt, expected_final_value)
 
     def TESTFUNC(self):
+        path = 'C:\\Users\\Valkyrie\\Desktop\\TEMP\\'
+        file = 'sim_cmd.json'
 
-        end = 2000
-        test_sig = np.zeros([1, end])
-        test_sig[0, 500:end] = 2.5
+        filename = path + file
+        last_m_time = 0
+
+        # Loop simulations until manually stopped.
+        while True:
+
+            # Wait until the C++ code executes and produces a sim command file
+            while True:
+                if not os.path.exists(filename):
+                    print(bcolors.OKBLUE + 'File not found yet...' + bcolors.ENDC)
+                    time.sleep(1)
+
+                elif os.path.getmtime(filename) != last_m_time:
+                    last_m_time = os.path.getmtime(filename)
+
+                    # Wait until the file is unlocked for safe access
+                    while is_locked(filename):
+                        time.sleep(1)
+
+                    print(bcolors.OKGREEN + 'File successfully opened! Here is the data:' + bcolors.ENDC)
+                    with open(filename) as jdat:
+                        sim_data = json.load(jdat)
+
+                    pprint(sim_data)
+                    break
+
+            # Pull out the json data
+            axis = sim_data['axis']
+            step_magnitude = sim_data['stepMagnitude']
+            start_time = sim_data['startTime']
+            end_time = sim_data['endTime']
+            pid_vals = sim_data['pid']
+            num_time_steps = sim_data['numTimeSteps']
+
+            test_sig = np.zeros([1, num_time_steps])
+            test_sig[0, 500:num_time_steps] = step_magnitude
+
+            if axis == 'pitch':
+                self.set_pitch_ctrl_pid(pid_vals['kp'], pid_vals['ki'], pid_vals['kd'], 0.9, 2.5, 0.01)
+            elif axis == 'roll':
+                self.set_roll_ctrl_pid(pid_vals['kp'], pid_vals['ki'], pid_vals['kd'], 0.9, 2.5, 0.01)
+            elif axis == 'yaw':
+                self.set_yaw_ctrl_pid(pid_vals['kp'], pid_vals['ki'], pid_vals['kd'], 0.9, 2.5, 0.01)
+
+            # Simulate
+            sim_out = self._simulate_axis(axis=axis, input_sig=test_sig, t_start=start_time, t_end=end_time)
+
+            step_analysis = self.analyze_step_performance_siso(x=sim_out['time'],
+                                                               y=sim_out['euler_output'],
+                                                               expected_final_value=step_magnitude)
+
+            # Return some fake results to the c++ code
+            full_result = {'riseTime': step_analysis['RiseTime'],
+                           'settlingTime': step_analysis['SettlingTime'],
+                           'settlingMin': step_analysis['SettlingMin'],
+                           'settlingMax': step_analysis['SettlingMax'],
+                           'overshoot': step_analysis['Overshoot'],
+                           'undershoot': step_analysis['Undershoot'],
+                           'peak': step_analysis['Peak'],
+                           'peakTime': step_analysis['PeakTime'],
+                           'steadyStateError': sim_out['euler_output'][0, -1] - step_magnitude}
+
+            for key, value in full_result.items():
+                if np.isnan(value):
+                    full_result[key] = -1.0
+
+            with open(path + 'sim_result.json', 'w') as outfile:
+                json.dump(full_result, outfile)
 
 
-        results = self._simulate_axis(axis='pitch', input_sig=test_sig, t_start=0.0, t_end=end*self._sim_dt)
+
+        # lw = 0.8
+        # plt.figure(figsize=(32, 18))
+        # plt.suptitle('Pitch Angle Step Test')
+        # plt.plot(results['time'], results['euler_output'][0, :], 'g-', label='Output', linewidth=lw)
+        # plt.plot(results['time'], results['signal_input'][0, :], 'b-', label='Input', linewidth=lw)
+        # plt.legend()
+        # plt.show()
+
+    def TESTFUNC2(self):
+
+        # Pull out the json data
+        axis            = 'pitch'
+        rate_axis       = 'gy'
+        step_magnitude  = 0.0
+        start_time      = 0.0
+        end_time        = 3.9
+        num_time_steps  = 2000
+
+        test_sig = np.zeros([1, num_time_steps])
+        test_sig[0, 500:num_time_steps] = step_magnitude
+
+        if axis == 'pitch':
+            self.set_pitch_ctrl_pid(3.5, 1.0, 0.01, 0.9, 2.5, 0.01)
+        elif axis == 'roll':
+            self.set_roll_ctrl_pid(2.4, 1.5, 1.1, 0.9, 2.5, 0.01)
+        elif axis == 'yaw':
+            self.set_yaw_ctrl_pid(2.4, 1.5, 1.1, 0.9, 2.5, 0.01)
+
+        # Simulate
+        sim_out = self._simulate_axis(axis=axis, rate_axis=rate_axis, input_sig=test_sig,
+                                      t_start=start_time, t_end=end_time,
+                                      enable_rate_control=False,
+                                      invert_rate_direction=False)
+
+        step_analysis = self.analyze_step_performance_siso(x=sim_out['time'],
+                                                           y=sim_out['euler_output'],
+                                                           expected_final_value=step_magnitude)
+
+        print(step_analysis)
 
         lw = 0.8
         plt.figure(figsize=(32, 18))
         plt.suptitle('Pitch Angle Step Test')
-        plt.plot(results['time'], results['euler_output'][0, :], 'g-', label='Output', linewidth=lw)
-        plt.plot(results['time'], results['signal_input'][0, :], 'b-', label='Input', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['euler_output'][0, :], 'g-', label='Angle Output', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['gyro_output'][0, :], 'k-', label='Gyro Output', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['signal_input'][0, :], 'b-', label='Angle Input', linewidth=lw)
         plt.legend()
-        plt.show()
 
+        plt.figure(figsize=(32, 18))
+        plt.suptitle('Pitch Angle Step Test')
+        plt.plot(sim_out['time'], sim_out['model_input'][0, :], 'g-', label='m1CMD', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['model_input'][1, :], 'k-', label='m2CMD', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['model_input'][2, :], 'b-', label='m3CMD', linewidth=lw)
+        plt.plot(sim_out['time'], sim_out['model_input'][3, :], 'c-', label='m4CMD', linewidth=lw)
+        plt.legend()
+
+        plt.show()
 
     def set_pitch_ctrl_pid(self, kp_angle, ki_angle, kd_angle, kp_rate, ki_rate, kd_rate):
         self._pitch_ctrl.update_angle_pid(kp_angle, ki_angle, kd_angle)
@@ -764,37 +902,59 @@ class DroneModel:
                          [self.motor_range_actual_min, self.motor_range_actual_max],
                          [self.motor_range_mapped_min, self.motor_range_mapped_max])
 
+    def _real_ahrs_data_to_mapped(self, input_signal):
+        return np.interp(input_signal,
+                         [self.ahrs_range_actual_min, self.ahrs_range_actual_max],
+                         [self.ahrs_range_mapped_min, self.ahrs_range_mapped_max])
+
+    def _mapped_ahrs_data_to_real(self, input_signal):
+        return np.interp(input_signal,
+                         [self.ahrs_range_mapped_min, self.ahrs_range_mapped_max],
+                         [self.ahrs_range_actual_min, self.ahrs_range_actual_max])
+
 
 if __name__ == "__main__":
-    cfg = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/config.csv'
-    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/training/best_results/pitch_full_ver1592726'
+    predict_off_file = True
+    predict_off_sim = False
+
+
+    cfg = 'G:/Projects/ValkyrieRNN/Simulation/SmallInferenceTestModel/config.csv'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/SmallInferenceTestModel/training/best_results/SmallInferenceTestModel7816'
+
+    # cfg = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/config.csv'
+    # ckpt = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver1/training/best_results/pitch_full_ver1592726'
+
+    cfg = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver2/config.csv'
+    ckpt = 'G:/Projects/ValkyrieRNN/Simulation/pitch_full_ver2/training/best_results/pitch_full_ver2218939'
+
+    gy_cfg = 'G:/Projects/ValkyrieRNN/Simulation/gyro_y_full_ver2/config.csv'
+    gy_ckpt = 'G:/Projects/ValkyrieRNN/Simulation/gyro_y_full_ver2/training/best_results/gyro_y_full_ver282006'
 
     data = 'G:/Projects/ValkyrieRNN/Data/ValidationData/'
 
-    # test = ModelInferencer(config_path=cfg, model_checkpoint=ckpt, data_path=data)
-    # test.setup()
-    #
-    # fileNum = 0
-    # yp, yt = test.predict(test.model_inferencing_files[1])
-    # score = test.evaluate(test.model_inferencing_files[1])
-    # print(score)
-    #
-    # lw = 0.8
-    # plt.figure(figsize=(32, 18))
-    # plt.suptitle('Validation Data Predictions')
-    # plt.plot(yt[:, 0], 'g--', label='Ground Truth', linewidth=lw)
-    # plt.plot(yp[:, 0], 'r-', label='Prediction', linewidth=2 * lw)
-    # plt.legend()
-    # plt.savefig('validateNum'+str(fileNum)+'.png')
+    if predict_off_sim:
+        model = DroneModel(euler_cfg_dict={'pitch': cfg},
+                           euler_mdl_dict={'pitch': ckpt},
+                           gyro_cfg_dict={'gy': gy_cfg},
+                           gyro_mdl_dict={'gy': gy_ckpt})
+        model.initialize(500, 125)
+        model.TESTFUNC2()
 
-    model = DroneModel(euler_cfg_dict={'pitch': cfg},
-                       euler_mdl_dict={'pitch': ckpt})
+    if predict_off_file:
+        model = ModelInferencer(config_path=cfg, model_checkpoint=ckpt, data_path=data)
+        model.setup()
 
-    model.initialize(500, 250)
-    model.set_roll_ctrl_pid(2.0, 2.0, 1.2, 0.9, 2.5, 0.01)
-    model.set_pitch_ctrl_pid(12.0, 2.0, 1.2, 0.9, 2.5, 0.01)
+        files = model.model_inferencing_files
 
-    model.TESTFUNC()
+        ypredict, yactual = model.predict(file=files[5])
+
+        lw = 0.8
+        plt.figure(figsize=(32, 18))
+        plt.suptitle('Pitch Angle Step Test')
+        plt.plot(ypredict[:, 0], 'g-', label='Prediction', linewidth=lw)
+        plt.plot(yactual[:, 0], 'b-', label='Actual', linewidth=lw)
+        plt.legend()
+        plt.show()
 
 
 
